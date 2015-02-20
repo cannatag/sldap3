@@ -27,6 +27,6 @@ __author__ = 'Giovanni Cannata'
 __email__ = 'cannatag@gmail.com'
 __license__ = 'LGPL v3'
 __description__ = 'A strictly RFC 4511 conforming LDAP V3 pure Python server.'
-__url__ = 'https://github.com/cannatag/ldap3'
+__url__ = 'https://github.com/cannatag/sldap3'
 __status__ = 'development - alpha'
 __long_description__ = open('README.rst').read()
