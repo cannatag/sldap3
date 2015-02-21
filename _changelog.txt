@@ -1,0 +1,5 @@
+* 0.0.1a1 - 2015.02.21
+    - Added sphinx structure
+
+* 0.0.1a0 - 2015.02.20
+    - Initial project structure

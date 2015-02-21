@@ -60,6 +60,15 @@ project_version_file.write('\n'.join([
 
 project_version_file.close()
 
+changelog_identifier = '\nChangelog\n---------\n\n'
+project_readme_file = open(path.join(__package_folder__, 'README.rst'), 'r+')
+project_changelog_file = open(path.join(__package_folder__, '_changelog.txt'), 'r')
+readme = project_readme_file.read()
+changelog_position = readme.find(changelog_identifier)
+if changelog_position > 0:
+    updated_readme = readme[0:changelog_position + len(changelog_identifier)] + project_changelog_file.read()
+    project_readme_file.write(updated_readme)
+
 setup(name=__package_name__,
       version=__version__,
       packages=['sldap3',
