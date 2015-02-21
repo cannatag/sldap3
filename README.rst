@@ -13,7 +13,7 @@ SLDAP3
     :target: https://pypi.python.org/pypi/sldap3/
     :alt: License
 
-sldap3 is a strictly RFC 4511 conforming LDAP V3 pure Python **server**.
+sldap3 is a strictly RFC 4511 conforming LDAP V3 pure Python **server**. It's a sibling of the **ldap3** client LDAP library.
 
 Home Page
 ---------
@@ -68,16 +68,6 @@ Support
 You can submit support tickets on https://github.com/cannatag/sldap3/issues/new
 
 
-Thanks to
----------
-
-* **Ilya Etingof**, the author of the *pyasn1* package for his excellent work and support.
-* **Mark Lutz** for his *Learning Python* and *Programming Python* excellent books series and **John Goerzen** and **Brandon Rhodes** for their book *Foundations of Python Network Programming*. These books are wonderful tools for learning Python and this project owes a lot to them.
-* **JetBrains** for donating to this project the Open Source license of *PyCharm 3 Professional*.
-* **GitHub** for providing the *free source repository space and the tools* I use to develop this project.
-* The **Python Software Foundation** for providing support for the test lab infrastructure.
-
-
 Contact me
 ----------
 
@@ -86,5 +76,7 @@ For information and suggestions you can contact me at cannatag@gmail.com or you 
 Changelog
 ---------
 
-* 0.0.1 - 2015.02.20
-    - Project structure
+CHANGELOG
+=========
+* 0.0.1-alpha - 2015.02.20
+    - Initial project structure
