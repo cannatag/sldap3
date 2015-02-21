@@ -22,11 +22,11 @@
 
 __package_name__ = 'sldap3'
 __package_folder__ = '.'
-__version__ = '0.0.1-alpha'
+__version__ = '0.0.1a0'
 __author__ = 'Giovanni Cannata'
 __email__ = 'cannatag@gmail.com'
 __license__ = 'LGPL v3'
-__description__ = 'A strictly RFC 4511 conforming LDAP V3 pure Python server.'
+__description__ = 'A strictly RFC 4511 conforming LDAP V3 pure Python server. Alpha version - DO NOT USE!!!'
 __url__ = 'https://github.com/cannatag/sldap3'
 __status__ = 'development - alpha'
 __long_description__ = open('README.rst').read()
