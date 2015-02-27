@@ -21,68 +21,35 @@
 # If not, see <http://www.gnu.org/licenses/>.
 
 from setuptools import setup
-from os import path
-from datetime import datetime
-from platform import uname, python_version, python_build, python_compiler
+from json import load
 
+version_dict = load(open('_version.json', 'r'))
+version = str(version_dict['version'])
+author = str(version_dict['author'])
+email = str(version_dict['email'])
+license = str(version_dict['license'])
+url = str(version_dict['url'])
+description = str(version_dict['description'])
+package_name = str(version_dict['package_name'])
+package_folder = str(version_dict['package_folder'])
+status = str(version_dict['status'])
 
-version_file = open('_version.py')
-exec_local = dict()
-exec(version_file.read(), dict(), exec_local)
-__version__ = exec_local['__version__']
-__author__ = exec_local['__author__']
-__email__ = exec_local['__email__']
-__license__ = exec_local['__license__']
-__url__ = exec_local['__url__']
-__description__ = exec_local['__description__']
-__long_description__ = exec_local['__long_description__']
-__package_name__ = exec_local['__package_name__']
-__package_folder__ = exec_local['__package_folder__']
-__status__ = exec_local['__status__']
+long_description = str(open('README.rst').read())
 
-version_file.close()
-
-project_version_file = open(path.join(__package_folder__, __package_name__, 'version.py'), 'w+')
-project_version_file.write('\n'.join([
-    '# THIS FILE IS AUTO-GENERATED. PLEASE DO NOT MODIFY!!!'
-    '# version file for ' + __package_name__,
-    '# generated on ' + datetime.now().__str__(),
-    '# on system ' + str(uname()),
-    '# with Python ' + python_version() + ' - ' + str(python_build()) + ' - ' + python_compiler(),
-    '#',
-    '__version__ = ' + "'" + __version__ + "'",
-    '__author__ = ' + "'" + __author__ + "'",
-    '__email__ = ' + "'" + __email__ + "'",
-    '__url__ = ' + "'" + __url__ + "'",
-    '__description__ = ' + "'" + __description__ + "'",
-    '__status__ = ' + "'" + __status__ + "'",
-    '__license__ = ' + "'" + __license__ + "'"]))
-
-project_version_file.close()
-
-changelog_identifier = '\nChangelog\n---------\n\n'
-project_readme_file = open(path.join(__package_folder__, 'README.rst'), 'r+')
-project_changelog_file = open(path.join(__package_folder__, '_changelog.txt'), 'r')
-readme = project_readme_file.read()
-changelog_position = readme.find(changelog_identifier)
-if changelog_position > 0:
-    updated_readme = readme[0:changelog_position + len(changelog_identifier)] + project_changelog_file.read()
-    project_readme_file.write(updated_readme)
-
-setup(name=__package_name__,
-      version=__version__,
+setup(name=package_name,
+      version=version,
       packages=['sldap3',
                 'sldap3.core'],
-      package_dir={'': __package_folder__},
+      package_dir={'': package_folder},
       install_requires=['pyasn1 >= 0.1.7',
-                        'ldap3 >= 0.9.7.5'],
-      license=__license__,
-      author=__author__,
-      author_email=__email__,
-      description=__description__,
-      long_description=__long_description__,
+                        'ldap3 >= 0.9.7.8'],
+      license=license,
+      author=author,
+      author_email=email,
+      description=description,
+      long_description=long_description,
       keywords='python3 python2 ldap server',
-      url=__url__,
+      url=url,
       classifiers=['Development Status :: 2 - Pre-Alpha',
                    'Intended Audience :: Developers',
                    'Intended Audience :: System Administrators',
