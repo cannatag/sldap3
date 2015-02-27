@@ -1,3 +1,7 @@
+* 0.0.1a3 - 2015.02.27
+    - Fixed auto versioning
+    - Fixed auto changelog
+
 * 0.0.1a1 - 2015.02.21
     - Added sphinx structure
 
