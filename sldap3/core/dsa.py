@@ -22,6 +22,7 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with ldap3 in the COPYING and COPYING.LESSER files.
 # If not, see <http://www.gnu.org/licenses/>.
+
 from os import linesep
 from threading import Lock
 from datetime import datetime

@@ -76,6 +76,14 @@ For information and suggestions you can contact me at cannatag@gmail.com or you 
 Changelog
 ---------
 
+* 0.0.2a - 2015.03.13
+    - Added event loop
+    - Added bind (always successful) operation
+    - Added unbind operation
+
+= 0.0.1a4 - 2015.02.28
+    - Fixed missing _version.json in MANIFEST.in
+
 * 0.0.1a3 - 2015.02.27
     - Fixed auto versioning
     - Fixed auto changelog
