@@ -1,7 +1,7 @@
 """
 """
 
-# Created on 2015.03.15
+# Created on 2015.03.13
 #
 # Author: Giovanni Cannata
 #
@@ -23,13 +23,13 @@
 # along with sldap3 in the COPYING and COPYING.LESSER files.
 # If not, see <http://www.gnu.org/licenses/>.
 
-import asyncio
 
-def Dsa(object):
-    def __init__(self, address, port, use_ssl=False):
-        self.address = address
-        self.port = port
-        self.use_ssl = use_ssl
-        self.loop =
+class Dua(object):
+    """
+    Directory User Agent - a client actually connected to the DSA
+    """
+    def __init__(self, identity='un-authenticated'):
+        self.identity = identity
+        self.user = None
 
-    def
+

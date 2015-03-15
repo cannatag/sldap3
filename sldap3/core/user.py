@@ -1,7 +1,7 @@
 """
 """
 
-# Created on 2015.03.13
+# Created on 2015.03.15
 #
 # Author: Giovanni Cannata
 #
@@ -24,6 +24,5 @@
 # If not, see <http://www.gnu.org/licenses/>.
 
 
-class User(object):
-    def __init__(self, identity='un-authenticated'):
-        self.identity = identity
+def User(object):
+    pass

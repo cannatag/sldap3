@@ -23,13 +23,8 @@
 # along with sldap3 in the COPYING and COPYING.LESSER files.
 # If not, see <http://www.gnu.org/licenses/>.
 
-import asyncio
 
-def Dsa(object):
-    def __init__(self, address, port, use_ssl=False):
-        self.address = address
-        self.port = port
-        self.use_ssl = use_ssl
-        self.loop =
+import json
 
-    def
+
+users = json.load('users.json')
