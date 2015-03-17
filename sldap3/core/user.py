@@ -24,5 +24,5 @@
 # If not, see <http://www.gnu.org/licenses/>.
 
 
-def User(object):
+class User(object):
     pass

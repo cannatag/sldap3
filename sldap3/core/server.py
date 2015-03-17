@@ -40,7 +40,7 @@ from ldap3.protocol.rfc4511 import LDAPMessage, BindRequest, ResultCode, LDAPDN,
     ServerSaslCreds, MessageID, ProtocolOp, Controls, Control
 from ldap3.protocol.rfc2696 import RealSearchControlValue
 from ldap3.protocol.oid import Oids
-from sldap3.core.user import ConnectedUser
+from sldap3.core.user import User
 
 clients = dict()
 identities = dict()
@@ -208,7 +208,7 @@ def process_messages(writer, messages, user):
 
 
 def client_connected(reader, writer):
-    user = ConnectedUser()
+    user = User()
     task = asyncio.async(handle_client(reader, writer, user))
     print('new connection')
     clients[task] = (reader, writer, user)
