@@ -49,7 +49,7 @@ from operation.unbind import do_unbind_operation
 def client_connected(reader, writer):
     dsa = asyncio.get_event_loop()._dsa
     user = User()
-    task = asyncio.async(dsa.handle_client(reader, writer, user))
+    task = dsa.loop.create_task(dsa.handle_client(reader, writer, user))
     print('new connection')
     dsa.clients[task] = (reader, writer, user)
 
@@ -58,6 +58,7 @@ def client_connected(reader, writer):
         del dsa.clients[task_done]
         writer.close()
 
+    task.add_done_callback(client_done)
 
 class Dsa(object):
     def __init__(self, address, port, use_ssl=False):
@@ -105,7 +106,7 @@ class Dsa(object):
 
     #@asyncio.coroutine
     def handle_client(self, reader, writer, user):
-        data = b'X'
+        data = -1 # enter loop
         while data:
             messages = []
             receiving = True
@@ -154,7 +155,7 @@ class Dsa(object):
             writer.close()
             return
         else:
-            raise LDAPExceptionError('unkwnown operation')
+            raise LDAPExceptionError('unknown operation')
 
         print('ID:', message_id, dict_req)
         ldap_message = LDAPMessage()
