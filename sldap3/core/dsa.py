@@ -41,7 +41,7 @@ from ldap3.protocol.rfc4511 import LDAPMessage, BindRequest, ResultCode, LDAPDN,
     ServerSaslCreds, MessageID, ProtocolOp, Controls, Control
 from ldap3.protocol.rfc2696 import RealSearchControlValue
 from ldap3.protocol.oid import Oids
-from sldap3.core.user import User
+from core.user import User
 
 
 def client_connected(reader, writer):
@@ -130,27 +130,18 @@ class Dsa(object):
                 else:
                     receiving = False
             print('just received {} bytes'.format(len(data)))
-
+            print(messages)
             if messages:
-                yield from self.process_messages(writer, messages, user)
-                yield from writer.drain()
-            else:
-                print('no messages')
-
+                print('received {} messages from {}'.format(len(messages), user.identity))
+                for request in messages:
+                    while len(request) > 0:
+                        ldap_req, unprocessed = decoder.decode(request, asn1Spec=LDAPMessage())
+                        request = unprocessed
+                        self.loop.create_task(self.perform_request(writer, ldap_req, user))
+                print('processed request')
         print('exit handle')
 
-    @asyncio.coroutine
-    def process_messages(self, writer, messages, user):
-        print('received {} messages from {}'.format(len(messages), user.identity))
-        for request in messages:
-            while len(request) > 0:
-                ldap_req, unprocessed = decoder.decode(request, asn1Spec=LDAPMessage())
-                request = unprocessed
-                asyncio.async(self.perform_request(writer, ldap_req, user))
-        print('processed request')
-
-
-    @asyncio.coroutine
+    # @asyncio.coroutine
     def perform_request(self, writer, request, user):
         print('performing request', request)
         message_id = int(request.getComponentByName('messageID'))
