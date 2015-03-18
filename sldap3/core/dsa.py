@@ -26,6 +26,7 @@
 import asyncio
 
 from ldap3 import SEQUENCE_TYPES, LDAPControlsError
+from ldap3.core.exceptions import LDAPExceptionError
 from ldap3.operation.abandon import abandon_request_to_dict
 from ldap3.operation.bind import bind_request_to_dict
 from ldap3.operation.add import add_request_to_dict
@@ -37,11 +38,12 @@ from ldap3.operation.modifyDn import modify_dn_request_to_dict
 from ldap3.operation.search import search_request_to_dict
 from pyasn1.codec.ber import decoder, encoder
 
-from ldap3.protocol.rfc4511 import LDAPMessage, BindRequest, ResultCode, LDAPDN, BindResponse, LDAPString, Referral, \
-    ServerSaslCreds, MessageID, ProtocolOp, Controls, Control
+from ldap3.protocol.rfc4511 import LDAPMessage, MessageID, ProtocolOp, Controls, Control
 from ldap3.protocol.rfc2696 import RealSearchControlValue
 from ldap3.protocol.oid import Oids
 from core.user import User
+from operation.bind import do_bind_operation
+from operation.unbind import do_unbind_operation
 
 
 def client_connected(reader, writer):
@@ -101,7 +103,7 @@ class Dsa(object):
             self.loop.close()
             print('loop closed')
 
-    @asyncio.coroutine
+    #@asyncio.coroutine
     def handle_client(self, reader, writer, user):
         data = b'X'
         while data:
@@ -129,30 +131,30 @@ class Dsa(object):
                             receiving = False
                 else:
                     receiving = False
-            print('just received {} bytes'.format(len(data)))
-            print(messages)
+            print('received {} bytes'.format(len(data)))
             if messages:
-                print('received {} messages from {}'.format(len(messages), user.identity))
                 for request in messages:
                     while len(request) > 0:
                         ldap_req, unprocessed = decoder.decode(request, asn1Spec=LDAPMessage())
                         request = unprocessed
                         self.loop.create_task(self.perform_request(writer, ldap_req, user))
-                print('processed request')
+                    print('processed request')
         print('exit handle')
 
-    # @asyncio.coroutine
+    @asyncio.coroutine
     def perform_request(self, writer, request, user):
         print('performing request', request)
         message_id = int(request.getComponentByName('messageID'))
         dict_req = self.decode_request(request)
         if dict_req['type'] == 'bindRequest':
-            response = yield from self.do_bind_operation(message_id, dict_req, user)
+            response = yield from do_bind_operation(self, user, message_id, dict_req)
             response_type = 'bindResponse'
         elif dict_req['type'] == 'unbindRequest':
-            yield from self.do_unbind_operation(message_id, user)
+            yield from do_unbind_operation(self, user, message_id)
             writer.close()
             return
+        else:
+            raise LDAPExceptionError('unkwnown operation')
 
         print('ID:', message_id, dict_req)
         ldap_message = LDAPMessage()
@@ -269,25 +271,3 @@ class Dsa(object):
         return control_type, {'description': Oids.get(control_type, ''), 'criticality': criticality,
                               'value': control_value}
 
-    @asyncio.coroutine
-    def do_bind_operation(self, message_id, dict_req, user):
-        print('do bind operation')
-        response = BindResponse()
-        response['resultCode'] = ResultCode(0)
-        response['matchedDN'] = LDAPDN('')
-        response['diagnosticMessage'] = LDAPString('')
-        referral = None
-        server_sasl_credentials = None
-        if referral:
-            response['referral'] = Referral(referral)
-
-        if server_sasl_credentials:
-            response['serverSaslCreds'] = ServerSaslCreds(server_sasl_credentials)
-
-        user.identity = dict_req['name']
-        return response
-
-    @asyncio.coroutine
-    def do_unbind_operation(self, message_id, user):
-        user.identity = 'unbound'
-        pass
