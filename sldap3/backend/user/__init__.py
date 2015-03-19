@@ -22,3 +22,31 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with ldap3 in the COPYING and COPYING.LESSER files.
 # If not, see <http://www.gnu.org/licenses/>.
+
+
+class UserBaseBackend(object):
+    def __init__(self):
+        pass
+
+    def find_user(self, identity):
+        raise NotImplementedError
+
+    def add_user(self, identity, authorization, credentials):
+        raise NotImplementedError
+
+    def del_user(self, identity):
+        raise NotImplementedError
+
+    def modify_user(self, identity, new_identity):
+        raise NotImplementedError
+
+    def check_credentials(self, user, credentials):
+        raise NotImplementedError
+
+    @classmethod
+    def unauthenticated(cls):
+        raise NotImplementedError
+
+    @classmethod
+    def anonymous(cls):
+        raise NotImplementedError

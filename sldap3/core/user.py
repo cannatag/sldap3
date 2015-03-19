@@ -25,6 +25,6 @@
 
 
 class User(object):
-    def __init__(self):
-        self.identity = None
-        self.authorization = None
+    def __init__(self, identity, authorization=None):
+        self.identity = identity
+        self.authorization = authorization

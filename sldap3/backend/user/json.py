@@ -25,24 +25,29 @@
 
 
 import json
-from backend.user.base import UserBaseBackend
+from backend.user import UserBaseBackend
+from core.user import User
 
 
 class JsonUserBackend(UserBaseBackend):
     def __init__(self, json_file):
         self.json_file = json_file
-        self.users = json.load(open(json_file))
+        try:
+            self.users = json.load(open(json_file))
+        except Exception:
+            self.users = {}
+
         super().__init__()
 
     def find_user(self, identity):
         if identity in self.users:
-            return self.users[identity]
+            return User(identity, self.users[identity])
 
         raise Exception('user not found')
 
-    def add_user(self, identity, authorization):
+    def add_user(self, identity, authorization, credentials):
         if identity not in self.users:
-            self.users[identity] = authorization
+            self.users[identity] = {'auth': authorization, 'password': credentials}
         else:
             raise Exception('user already present')
 
@@ -61,3 +66,21 @@ class JsonUserBackend(UserBaseBackend):
                 raise Exception('unable to modify user')
         else:
             raise Exception('user not found')
+
+    def check_credentials(self, user, credentials):
+        if user.identity in self.users:
+            if self.users[user.identity]['password'] == credentials:
+                return True
+
+        return False
+
+    def store(self):
+        json.dump(self.users, open(self.json_file, 'w'))
+
+    @classmethod
+    def unauthenticated(cls):
+        return User('un-authenticated')
+
+    @classmethod
+    def anonymous(cls):
+        return User('anonymous')

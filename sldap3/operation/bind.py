@@ -24,15 +24,27 @@
 # If not, see <http://www.gnu.org/licenses/>.
 
 import asyncio
+from ldap3 import RESULT_INVALID_CREDENTIALS, RESULT_SUCCESS
 from ldap3.protocol.rfc4511 import ResultCode, LDAPDN, BindResponse, LDAPString, Referral, ServerSaslCreds
 
 @asyncio.coroutine
 def do_bind_operation(dsa, user, message_id, dict_req):
-    print('do bind operation')
+    print('do bind operation', dict_req)
     response = BindResponse()
-    response['resultCode'] = ResultCode(0)
-    response['matchedDN'] = LDAPDN('')
-    response['diagnosticMessage'] = LDAPString('')
+    try:
+        user = dsa.user_backend.find_user(dict_req['name'])
+        if not dsa.user_backend.check_credentials(user, dict_req['authentication']['simple']):
+            raise Exception('invalid credentials')
+        response['resultCode'] = ResultCode(RESULT_SUCCESS)
+        response['matchedDN'] = LDAPDN('')
+        response['diagnosticMessage'] = LDAPString('')
+    except Exception:
+        yield from asyncio.sleep(3)  # pause if invalid user
+        user = None
+        response['resultCode'] = ResultCode(RESULT_INVALID_CREDENTIALS)
+        response['matchedDN'] = LDAPDN('')
+        response['diagnosticMessage'] = LDAPString('user not found')
+
     referral = None
     server_sasl_credentials = None
     if referral:
@@ -41,5 +53,4 @@ def do_bind_operation(dsa, user, message_id, dict_req):
     if server_sasl_credentials:
         response['serverSaslCreds'] = ServerSaslCreds(server_sasl_credentials)
 
-    user.identity = dict_req['name']
     return response

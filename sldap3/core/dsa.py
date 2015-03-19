@@ -44,20 +44,21 @@ from pyasn1.codec.ber import decoder, encoder
 from ldap3.protocol.rfc4511 import LDAPMessage, MessageID, ProtocolOp, Controls, Control
 from ldap3.protocol.rfc2696 import RealSearchControlValue
 from ldap3.protocol.oid import Oids
+from core.dua import Dua
 from core.user import User
 from operation.bind import do_bind_operation
 from operation.unbind import do_unbind_operation
 
 
 def client_connected(reader, writer):
-    dsa = asyncio.get_event_loop()._dsa
-    user = User()
-    task = dsa.loop.create_task(dsa.handle_client(reader, writer, user))
+    dsa = asyncio.get_event_loop().private_dsa
+    dua = Dua(dsa.user_backend.unauthenticated())
+    task = dsa.loop.create_task(dsa.handle_client(reader, writer, dua))
     print('new connection on server', dsa.name)
-    dsa.clients[task] = (reader, writer, user)
+    dsa.clients[task] = (reader, writer, dua)
 
     def client_done(task_done):
-        print('closing connection on server', dsa.name, 'for user', user.identity)
+        print('closing connection on server', dsa.name, 'for user', dua.user.identity)
         del dsa.clients[task_done]
         writer.close()
 
@@ -65,7 +66,7 @@ def client_connected(reader, writer):
 
 
 class Dsa(object):
-    def __init__(self, name, address, port, cert_file=None, key_file=None, key_file_password=None):
+    def __init__(self, name, address, port, cert_file=None, key_file=None, key_file_password=None, user_backend=None):
         self.name = name
         self.address = address
         self.port = port
@@ -76,6 +77,7 @@ class Dsa(object):
         self.cert_file = cert_file
         self.key_file = key_file
         self.key_file_password = key_file_password
+        self.user_backend = user_backend
 
     @asyncio.coroutine
     def status(self):
@@ -96,7 +98,7 @@ class Dsa(object):
 
     def start(self):
         self.loop = asyncio.new_event_loop()
-        self.loop._dsa = self
+        self.loop.private_dsa = self
         asyncio.set_event_loop(self.loop)
         if self.use_ssl:
             ssl_context = ssl.create_default_context(purpose=ssl.Purpose.CLIENT_AUTH)
@@ -121,7 +123,7 @@ class Dsa(object):
 
     #@asyncio.coroutine
     def handle_client(self, reader, writer, user):
-        data = -1 # enter loop
+        data = -1  # enter loop
         while data:
             messages = []
             receiving = True

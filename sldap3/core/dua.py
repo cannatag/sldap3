@@ -22,14 +22,16 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with sldap3 in the COPYING and COPYING.LESSER files.
 # If not, see <http://www.gnu.org/licenses/>.
+from datetime import datetime
 
 
 class Dua(object):
     """
     Directory User Agent - a client actually connected to the DSA
     """
-    def __init__(self, identity='un-authenticated'):
-        self.identity = identity
-        self.user = None
+    def __init__(self, user):
+        self.user = user
+        self.connected_time = datetime.now()
+
 
 
