@@ -65,14 +65,17 @@ def client_connected(reader, writer):
 
 
 class Dsa(object):
-    def __init__(self, name, address, port, use_ssl=False):
+    def __init__(self, name, address, port, cert_file=None, key_file=None, key_file_password=None):
         self.name = name
         self.address = address
         self.port = port
-        self.use_ssl = use_ssl
+        self.use_ssl = True if cert_file else False
         self.clients = dict()
         self.server = None
         self.loop = None
+        self.cert_file = cert_file
+        self.key_file = key_file
+        self.key_file_password = key_file_password
 
     @asyncio.coroutine
     def status(self):
@@ -97,7 +100,7 @@ class Dsa(object):
         asyncio.set_event_loop(self.loop)
         if self.use_ssl:
             ssl_context = ssl.create_default_context(purpose=ssl.Purpose.CLIENT_AUTH)
-            ssl_context.options &= ~ssl.OP_NO_SSLv3
+            ssl_context.load_cert_chain(self.cert_file, keyfile=self.key_file, password=self.key_file_password)
             coro = asyncio.start_server(client_connected, self.address, self.port, ssl=ssl_context)
         else:
             print('start_server', self.name)

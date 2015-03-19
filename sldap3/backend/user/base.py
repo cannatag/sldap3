@@ -1,7 +1,7 @@
 """
 """
 
-# Created on 2015.03.15
+# Created on 2015.03.19
 #
 # Author: Giovanni Cannata
 #
@@ -24,7 +24,19 @@
 # If not, see <http://www.gnu.org/licenses/>.
 
 
-import json
+class UserBaseBackend(object):
+    def __init__(self):
+        pass
 
+    def find_user(self, identity):
+        raise NotImplementedError
 
-users = json.load('users.json')
+    def add_user(self, identity):
+        raise NotImplementedError
+
+    def del_user(self, identity):
+        raise NotImplementedError
+
+    def modify_user(self, identity, new_identity):
+        raise NotImplementedError
+

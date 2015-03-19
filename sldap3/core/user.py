@@ -25,4 +25,6 @@
 
 
 class User(object):
-    pass
+    def __init__(self):
+        self.identity = None
+        self.authorization = None
