@@ -17,13 +17,16 @@ if __name__ == '__main__':
     instances.append(dsa1)
     instances.append(dsa2)
 
-    for instance in instances:
-        instance.process = Process(target=instance.dsa.start)
-        instance.process.start()
+    if len(instances) > 1:
+        for instance in instances:
+            instance.process = Process(target=instance.dsa.start)
+            instance.process.start()
 
-    print('started %d instances' % (len(instances)))
+        print('started %d instances' % (len(instances)))
 
-    for instance in instances:
-        instance.process.join()
+        for instance in instances:
+            instance.process.join()
+    elif len(instances) == 1:
+        instances[0].dsa.start()
 
     print('sldap3 done')
