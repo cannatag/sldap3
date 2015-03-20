@@ -50,21 +50,6 @@ from operation.bind import do_bind_operation
 from operation.unbind import do_unbind_operation
 
 
-def client_connected(reader, writer):
-    dsa = asyncio.get_event_loop().private_dsa
-    dua = Dua(dsa.user_backend.unauthenticated())
-    task = dsa.loop.create_task(dsa.handle_client(reader, writer, dua))
-    print('new connection on server', dsa.name)
-    dsa.clients[task] = (reader, writer, dua)
-
-    def client_done(task_done):
-        print('closing connection on server', dsa.name, 'for user', dua.user.identity)
-        del dsa.clients[task_done]
-        writer.close()
-
-    task.add_done_callback(client_done)
-
-
 class Dsa(object):
     def __init__(self, name, address, port, cert_file=None, key_file=None, key_file_password=None, user_backend=None):
         self.name = name
@@ -96,6 +81,10 @@ class Dsa(object):
         self.server.close()
         print('server {} closed'.format(self.name))
 
+    def client_connected(self, reader, writer):
+        dua = Dua(self.user_backend.unauthenticated())
+        self.register_client(reader, writer, dua)
+
     def start(self):
         self.loop = asyncio.new_event_loop()
         self.loop.private_dsa = self
@@ -103,10 +92,10 @@ class Dsa(object):
         if self.use_ssl:
             ssl_context = ssl.create_default_context(purpose=ssl.Purpose.CLIENT_AUTH)
             ssl_context.load_cert_chain(self.cert_file, keyfile=self.key_file, password=self.key_file_password)
-            coro = asyncio.start_server(client_connected, self.address, self.port, ssl=ssl_context)
+            coro = asyncio.start_server(self.client_connected, self.address, self.port, ssl=ssl_context)
         else:
             print('start_server', self.name)
-            coro = asyncio.start_server(client_connected, self.address, self.port)
+            coro = asyncio.start_server(self.client_connected, self.address, self.port)
         self.server = self.loop.run_until_complete(coro)
         print('Server {} started'.format(self.name))
         self.loop.create_task(self.status())
@@ -188,3 +177,18 @@ class Dsa(object):
         encoded_message = encoder.encode(ldap_message)
         writer.write(encoded_message)
         writer.drain()
+
+    def register_client(self, reader, writer, dua):
+        task = self.loop.create_task(self.handle_client(reader, writer, dua))
+        print('new connection on server', self.name)
+        self.clients[task] = (reader, writer, dua)
+
+        def client_done(task_done):
+            print('closing connection on server', self.name, 'for user', dua.user.identity)
+            self.unregister_client(task_done)
+            writer.close()
+
+        task.add_done_callback(client_done)
+
+    def unregister_client(self, task):
+        del self.clients[task]
