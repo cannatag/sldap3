@@ -6,18 +6,13 @@ from multiprocessing import Process
 if __name__ == '__main__':
     instances = []
 
-    user_backend = JsonUserBackend('users.json')
-    try:
-        user_backend.add_user('giovanni', 'admin')
-        user_backend.add_user('beatrice', 'user')
-        user_backend.store()
-    except Exception:
-        pass
-
-
+    user_backend = JsonUserBackend('localhost-users.json')
+    user_backend.add_user('giovanni', 'admin', 'password')
+    user_backend.add_user('beatrice', 'user', 'password')
+    user_backend.store()
 
     dsa1 = Instance(Dsa('DSA1', 'localhost', 389, user_backend=user_backend))
-    dsa2 = Instance(Dsa('DSA2', 'localhost', 636, cert_file='cert-serv.pem', key_file='key-serv.pem', user_backend=user_backend))
+    dsa2 = Instance(Dsa('DSA2', 'localhost', 636, cert_file='server-cert.pem', key_file='server-key.pem', user_backend=user_backend))
 
     instances.append(dsa1)
     instances.append(dsa2)
