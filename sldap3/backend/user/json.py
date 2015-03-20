@@ -25,8 +25,8 @@
 
 
 import json
-from backend.user import UserBaseBackend
-from core.user import User
+from ..user import UserBaseBackend
+from ...core.user import User
 
 
 class JsonUserBackend(UserBaseBackend):

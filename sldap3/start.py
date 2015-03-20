@@ -1,7 +1,7 @@
-from backend.user.json import JsonUserBackend
-from core.dsa import Dsa
-from core.instance import Instance
 from multiprocessing import Process
+
+from sldap3 import JsonUserBackend, Dsa, Instance
+
 
 if __name__ == '__main__':
     instances = []

@@ -44,10 +44,9 @@ from pyasn1.codec.ber import decoder, encoder
 from ldap3.protocol.rfc4511 import LDAPMessage, MessageID, ProtocolOp, Controls, Control
 from ldap3.protocol.rfc2696 import RealSearchControlValue
 from ldap3.protocol.oid import Oids
-from core.dua import Dua
-from core.user import User
-from operation.bind import do_bind_operation
-from operation.unbind import do_unbind_operation
+from .dua import Dua
+from ..operation.bind import do_bind_operation
+from ..operation.unbind import do_unbind_operation
 
 
 class Dsa(object):
