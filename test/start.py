@@ -11,8 +11,8 @@ if __name__ == '__main__':
     user_backend.add_user('beatrice', 'user', 'password')
     user_backend.store()
 
-    dsa1 = Instance(Dsa('DSA1', 'localhost', 389, user_backend=user_backend))
-    dsa2 = Instance(Dsa('DSA2', 'localhost', 636, cert_file='server-cert.pem', key_file='server-key.pem', user_backend=user_backend))
+    dsa1 = Instance(Dsa('DSA1', 'localhost', port=1389, user_backend=user_backend))
+    dsa2 = Instance(Dsa('DSA2', 'localhost', cert_file='server-cert.pem', key_file='server-key.pem', user_backend=user_backend))
 
     instances.append(dsa1)
     instances.append(dsa2)

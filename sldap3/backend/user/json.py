@@ -43,29 +43,29 @@ class JsonUserBackend(UserBaseBackend):
         if identity in self.users:
             return User(identity, self.users[identity])
 
-        raise Exception('user not found')
+        return None
 
     def add_user(self, identity, authorization, credentials):
         if identity not in self.users:
             self.users[identity] = {'auth': authorization, 'password': credentials}
-        else:
-            raise Exception('user already present')
+            return True
+
+        return False
 
     def del_user(self, identity):
         if identity in self.users:
             del self.users[identity]
-        else:
-            raise Exception('user not found')
+            return True
+
+        return False
 
     def modify_user(self, identity, new_identity):
         if identity in self.users:
-            try:
-                self.add_user(new_identity, self.users[identity])
+            if self.add_user(new_identity, self.users[identity]):
                 self.del_user(identity)
-            except Exception:
-                raise Exception('unable to modify user')
-        else:
-            raise Exception('user not found')
+                return True
+
+        return False
 
     def check_credentials(self, user, credentials):
         if user.identity in self.users:
