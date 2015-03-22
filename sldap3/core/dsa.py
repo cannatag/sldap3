@@ -26,11 +26,8 @@
 import asyncio
 import ssl
 
-from ldap3 import SEQUENCE_TYPES, LDAPControlsError
 from ldap3.core.exceptions import LDAPExceptionError
 from ldap3.strategy.base import BaseStrategy
-from ldap3.protocol.convert import build_controls_list
-from ldap3.operation.abandon import abandon_request_to_dict
 from ldap3.operation.bind import bind_request_to_dict
 from ldap3.operation.add import add_request_to_dict
 from ldap3.operation.compare import compare_request_to_dict
@@ -41,12 +38,13 @@ from ldap3.operation.modifyDn import modify_dn_request_to_dict
 from ldap3.operation.search import search_request_to_dict
 from pyasn1.codec.ber import decoder, encoder
 
-from ldap3.protocol.rfc4511 import LDAPMessage, MessageID, ProtocolOp, Controls, Control
+from ldap3.protocol.rfc4511 import LDAPMessage
 from ldap3.protocol.rfc2696 import RealSearchControlValue
 from ldap3.protocol.oid import Oids
 from .dua import Dua
 from ..operation.bind import do_bind_operation
 from ..operation.unbind import do_unbind_operation
+from protocol.rfc4511 import build_ldap_message
 
 
 class Dsa(object):
@@ -178,13 +176,8 @@ class Dsa(object):
             raise LDAPExceptionError('unknown operation')
 
         print('ID:', message_id, dict_req)
-        ldap_message = LDAPMessage()
-        ldap_message['messageID'] = MessageID(message_id)
-        ldap_message['protocolOp'] = ProtocolOp().setComponentByName(response_type, response)
-        controls = None
-        message_controls = build_controls_list(controls)
-        if message_controls is not None:
-            ldap_message['controls'] = message_controls
+        controls = None  # TODO
+        ldap_message = build_ldap_message(message_id, response_type, response, controls)
 
         print('sending', ldap_message)
         encoded_message = encoder.encode(ldap_message)
