@@ -43,6 +43,7 @@ from ldap3.protocol.rfc2696 import RealSearchControlValue
 from ldap3.protocol.oid import Oids
 from .dua import Dua
 from ..operation.bind import do_bind_operation
+from operation.extended import do_extended_operation
 from ..operation.unbind import do_unbind_operation
 from protocol.rfc4511 import build_ldap_message
 
@@ -171,6 +172,8 @@ class Dsa(object):
                 yield from do_unbind_operation(self, dua, message_id)
                 dua.writer.close()
                 return
+            elif dict_req['type'] == 'extendedReq':
+                response, response_type = yield from do_extended_operation(self, dua, message_id, dict_req)
             else:
                 raise LDAPExceptionError('unknown operation')
 

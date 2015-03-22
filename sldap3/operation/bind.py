@@ -25,9 +25,7 @@
 
 import asyncio
 from ldap3 import RESULT_INVALID_CREDENTIALS, RESULT_SUCCESS, RESULT_PROTOCOL_ERROR, RESULT_AUTH_METHOD_NOT_SUPPORTED
-from ldap3.protocol.rfc4511 import ServerSaslCreds, BindResponse
-from ..protocol.rfc4511 import build_ldap_result
-from protocol.rfc4511 import build_bind_response
+from ..protocol.rfc4511 import build_ldap_result, build_bind_response
 
 # BindRequest ::= [APPLICATION 0] SEQUENCE {
 #     version                 INTEGER (1 ..  127),
