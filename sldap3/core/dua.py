@@ -23,15 +23,30 @@
 # along with sldap3 in the COPYING and COPYING.LESSER files.
 # If not, see <http://www.gnu.org/licenses/>.
 from datetime import datetime
+from ldap3 import RESULT_PROTOCOL_ERROR
+from pyasn1.codec.ber import decoder, encoder
+from protocol.rfc4511 import build_extended_response, build_ldap_result, build_ldap_message
 
 
 class Dua(object):
     """
-    Directory User Agent - a client actually connected to the DSA
+    Directory User Agent - a client actually connected to the DSA with an active transport
     """
-    def __init__(self, user):
+    def __init__(self, user, reader, writer):
         self.user = user
         self.connected_time = datetime.now()
+        self.reader = reader
+        self.writer = writer
+        self.pending = {}
 
+    def send(self, ldap_message):
+        encoded_message = encoder.encode(ldap_message)
+        self.writer.write(encoded_message)
+        self.writer.drain()
 
-
+    def abort(self, result_code=RESULT_PROTOCOL_ERROR, diagnostic_message=''):  # unsolicited notification of disconnection
+        result = build_ldap_result(result_code, diagnostic_message=diagnostic_message)
+        response = build_extended_response(result, '1.3.6.1.4.1.1466.20036')
+        ldap_message = build_ldap_message(0, 'extendedResp', response)
+        self.send(ldap_message)
+        self.writer.close()

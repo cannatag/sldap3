@@ -83,7 +83,7 @@ class Dsa(object):
         print('DSA {} closed'.format(self.name))
 
     def client_connected(self, reader, writer):
-        dua = Dua(self.user_backend.unauthenticated())
+        dua = Dua(self.user_backend.anonymous(), reader, writer)
         self.register_client(reader, writer, dua)
 
     def start(self):
@@ -94,7 +94,6 @@ class Dsa(object):
         if self.port:  # start unsecure server
             coro = asyncio.start_server(self.client_connected, self.address, self.port)
             self.server = self.loop.run_until_complete(coro)
-
 
         if self.secure_port:  # start secure server
             ssl_context = ssl.create_default_context(purpose=ssl.Purpose.CLIENT_AUTH)
@@ -121,8 +120,8 @@ class Dsa(object):
             self.loop.close()
             print('loop closed')
 
-    #@asyncio.coroutine
-    def handle_client(self, reader, writer, user):
+    @asyncio.coroutine
+    def handle_client(self, dua):
         data = -1  # enter loop
         while data:
             messages = []
@@ -132,7 +131,7 @@ class Dsa(object):
             get_more_data = True
             while receiving:
                 if get_more_data:
-                    data = yield from reader.read(4096)
+                    data = yield from dua.reader.read(4096)
                     unprocessed += data
                 if len(data) > 0:
                     length = BaseStrategy.compute_ldap_message_size(unprocessed)
@@ -155,42 +154,45 @@ class Dsa(object):
                     while len(request) > 0:
                         ldap_req, unprocessed = decoder.decode(request, asn1Spec=LDAPMessage())
                         request = unprocessed
-                        self.loop.create_task(self.perform_request(writer, ldap_req, user))
+                        self.loop.create_task(self.perform_request(dua, ldap_req))
                     print('processed request for server', self.name)
         print('exit handle for server', self.name)
 
     @asyncio.coroutine
-    def perform_request(self, writer, request, user):
+    def perform_request(self, dua, request):
         print('performing request', request, 'on server', self.name)
         message_id = int(request.getComponentByName('messageID'))
         dict_req = BaseStrategy.decode_request(request)
+        if message_id not in dua.pending:
+            dua.pending[message_id] = dict_req
+            if dict_req['type'] == 'bindRequest':
+                response, response_type = yield from do_bind_operation(self, dua, message_id, dict_req)
+            elif dict_req['type'] == 'unbindRequest':
+                yield from do_unbind_operation(self, dua, message_id)
+                dua.writer.close()
+                return
+            else:
+                raise LDAPExceptionError('unknown operation')
 
-        if dict_req['type'] == 'bindRequest':
-            response = yield from do_bind_operation(self, user, message_id, dict_req)
-            response_type = 'bindResponse'
-        elif dict_req['type'] == 'unbindRequest':
-            yield from do_unbind_operation(self, user, message_id)
-            writer.close()
+            del dua.pending[message_id]
+            if not response:  # notice of disconnection sent while doing operation
+                return
+            print('ID:', message_id, dict_req)
+            controls = None  # TODO
+            ldap_message = build_ldap_message(message_id, response_type, response, controls)
+        else:  # pending message with same id of previous message
+            dua.abort(diagnostic_message='duplicate message ID')
             return
-        else:
-            raise LDAPExceptionError('unknown operation')
+        dua.send(ldap_message)
 
-        print('ID:', message_id, dict_req)
-        controls = None  # TODO
-        ldap_message = build_ldap_message(message_id, response_type, response, controls)
-
-        print('sending', ldap_message)
-        encoded_message = encoder.encode(ldap_message)
-        writer.write(encoded_message)
-        writer.drain()
 
     def register_client(self, reader, writer, dua):
-        task = self.loop.create_task(self.handle_client(reader, writer, dua))
+        task = self.loop.create_task(self.handle_client(dua))
         print('new connection on server', self.name)
-        self.clients[task] = (reader, writer, dua)
+        self.clients[task] = dua
 
         def client_done(task_done):
-            print('closing connection on server', self.name, 'for user', dua.user.identity)
+            print('closing connection on server', self.name, 'for identity', dua.user.identity)
             self.unregister_client(task_done)
             writer.close()
 

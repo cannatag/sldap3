@@ -23,7 +23,7 @@
 # along with sldap3 in the COPYING and COPYING.LESSER files.
 # If not, see <http://www.gnu.org/licenses/>.
 from ldap3.protocol.rfc4511 import LDAPResult, LDAPMessage, ProtocolOp, MessageID, Referral, BindResponse, \
-    ServerSaslCreds
+    ServerSaslCreds, ExtendedResponse
 from ldap3.protocol.convert import build_controls_list
 
 
@@ -141,5 +141,22 @@ def build_bind_response(ldap_result, server_sasl_credentials):
         response['referral'] = ldap_result['referral']
     if server_sasl_credentials:
         response['serverSaslCreds'] = ServerSaslCreds(server_sasl_credentials)
+
+    return response
+
+
+def build_extended_response(ldap_result, response_name=None, response_value=None):
+    # ExtendedResponse ::= [APPLICATION 24] SEQUENCE {
+    #     COMPONENTS OF LDAPResult,
+    #     responseName     [10] LDAPOID OPTIONAL,
+    #     responseValue    [11] OCTET STRING OPTIONAL }
+    response = ExtendedResponse()
+    response['resultCode'] = ldap_result['resultCode']
+    response['matchedDN'] = ldap_result['matchedDN']
+    response['diagnosticMessage'] = ldap_result['diagnosticMessage']
+    if response_name:
+        response['responseName'] = response_name
+    if response_value:
+        response['responseValue'] = response_value
 
     return response
