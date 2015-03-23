@@ -25,6 +25,7 @@
 
 import asyncio
 import ssl
+from ldap3 import RESULT_SUCCESS
 
 from ldap3.core.exceptions import LDAPExceptionError
 from ldap3.strategy.base import BaseStrategy
@@ -84,8 +85,8 @@ class Dsa(object):
         print('DSA {} closed'.format(self.name))
 
     def client_connected(self, reader, writer):
-        dua = Dua(self.user_backend.anonymous(), reader, writer)
-        self.register_client(reader, writer, dua)
+        dua = Dua(self.user_backend.anonymous(), reader, writer, self)
+        self.register_client(dua)
 
     def start(self):
         self.loop = asyncio.new_event_loop()
@@ -161,21 +162,27 @@ class Dsa(object):
 
     @asyncio.coroutine
     def perform_request(self, dua, request):
-        print('performing request', request, 'on server', self.name)
         message_id = int(request.getComponentByName('messageID'))
         dict_req = BaseStrategy.decode_request(request)
         if message_id not in dua.pending:
             dua.pending[message_id] = dict_req
             if dict_req['type'] == 'bindRequest':
-                response, response_type = yield from do_bind_operation(self, dua, message_id, dict_req)
+                response, response_type = yield from do_bind_operation(dua, message_id, dict_req)
             elif dict_req['type'] == 'unbindRequest':
-                yield from do_unbind_operation(self, dua, message_id)
+                yield from do_unbind_operation(dua, message_id)
                 dua.writer.close()
                 return
             elif dict_req['type'] == 'extendedReq':
-                response, response_type = yield from do_extended_operation(self, dua, message_id, dict_req)
+                response, response_type = yield from do_extended_operation(dua, message_id, dict_req)
+                if response['responseName'] == '1.3.6.1.4.1.1466.20037' and response['result'] == RESULT_SUCCESS:  # issue start_tls
+                    print('start_tls')
+                    ldap_message = build_ldap_message(message_id, response_type, response, None)
+                    dua.send(ldap_message)
+                    dua.start_tls()
+                    response = None
             else:
-                raise LDAPExceptionError('unknown operation')
+                dua.abort(diagnostic_message='unknown operation')
+                return
 
             del dua.pending[message_id]
             if not response:  # notice of disconnection sent while doing operation
@@ -188,8 +195,7 @@ class Dsa(object):
             return
         dua.send(ldap_message)
 
-
-    def register_client(self, reader, writer, dua):
+    def register_client(self, dua):
         task = self.loop.create_task(self.handle_client(dua))
         print('new connection on server', self.name)
         self.clients[task] = dua
@@ -197,7 +203,7 @@ class Dsa(object):
         def client_done(task_done):
             print('closing connection on server', self.name, 'for identity', dua.user.identity)
             self.unregister_client(task_done)
-            writer.close()
+            dua.writer.close()
 
         task.add_done_callback(client_done)
 

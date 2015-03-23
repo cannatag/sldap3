@@ -26,17 +26,20 @@ from datetime import datetime
 from ldap3 import RESULT_PROTOCOL_ERROR
 from pyasn1.codec.ber import decoder, encoder
 from protocol.rfc4511 import build_extended_response, build_ldap_result, build_ldap_message
+import ssl
 
 
 class Dua(object):
     """
     Directory User Agent - a client actually connected to the DSA with an active transport
     """
-    def __init__(self, user, reader, writer):
+    def __init__(self, user, reader, writer, dsa):
         self.user = user
+        self.dsa = dsa
         self.connected_time = datetime.now()
         self.reader = reader
         self.writer = writer
+        self.tls_started = False
         self.pending = {}
 
     def send(self, ldap_message):
@@ -50,3 +53,13 @@ class Dua(object):
         ldap_message = build_ldap_message(0, 'extendedResp', response)
         self.send(ldap_message)
         self.writer.close()
+
+    def start_tls(self):
+        if not self.tls_started:
+            print('start_tls')
+            ssl_context = ssl.create_default_context(purpose=ssl.Purpose.CLIENT_AUTH)
+            ssl_context.load_cert_chain(self.dsa.cert_file, keyfile=self.dsa.key_file, password=self.dsa.key_file_password)
+            wrapped_socket = ssl_context.wrap_socket(self.writer.get_extra_info('socket'), server_side=True, do_handshake_on_connect=True)
+            return True
+
+        return False

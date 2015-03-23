@@ -29,12 +29,21 @@ import asyncio
 #     requestName      [0] LDAPOID,
 #     requestValue     [1] OCTET STRING OPTIONAL }
 
+from ldap3 import RESULT_SUCCESS, RESULT_PROTOCOL_ERROR, RESULT_UNAVAILABLE
+from protocol.rfc4511 import build_ldap_result, build_extended_response
+
+
 @asyncio.coroutine
-def do_extended_operation(dsa, dua, message_id, dict_req):
+def do_extended_operation(dua, message_id, dict_req):
     print('do extended operation', dict_req)
 
     if dict_req['name'] == '1.3.6.1.4.1.1466.20037':  # start_tls
-        pass
-    response = None
+        if dua.dsa.secure_port:
+            result = build_ldap_result(RESULT_SUCCESS)
+        else:
+            result = build_ldap_result(RESULT_UNAVAILABLE)
+        response = build_extended_response(result, '1.3.6.1.4.1.1466.20037')
+    else:
+        result = build_ldap_result(RESULT_PROTOCOL_ERROR, diagnostic_message='extended operation not supported')
 
     return response, 'extendedResp'

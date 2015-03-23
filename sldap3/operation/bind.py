@@ -44,7 +44,7 @@ from ..protocol.rfc4511 import build_ldap_result, build_bind_response
 
 
 @asyncio.coroutine
-def do_bind_operation(dsa, dua, message_id, dict_req):
+def do_bind_operation(dua, message_id, dict_req):
     print('do bind operation', dict_req)
     while len(dua.pending) > 1:  # wait until only the bind operation is in the pending dict
         asyncio.sleep(0.1)
@@ -52,27 +52,27 @@ def do_bind_operation(dsa, dua, message_id, dict_req):
     server_sasl_credentials = None
     if dict_req['version'] != 3:  # protocol version check (RFC4511 4.2 - line 878)
         result = build_ldap_result(RESULT_PROTOCOL_ERROR, diagnostic_message='only LDAP version 3 protocol allowed')
-        dua.user = dsa.user_backend.anonymous()
+        dua.user = dua.dsa.user_backend.anonymous()
     else:
         if dict_req['authentication']['simple'] == '' and not dict_req['name']:  # anonymous simple authentication (RFC4511 4.2 - line 883)
-            dua.user = dsa.user_backend.anonymous()
+            dua.user = dua.dsa.user_backend.anonymous()
             result = build_ldap_result(RESULT_SUCCESS, diagnostic_message='anonymous authentication successful')
         elif dict_req['name'] and dict_req['authentication']['simple']:  # simple authentication (RFC4511 4.2 - line 888)
-            dua.user = dsa.user_backend.find_user(dict_req['name'])
+            dua.user = dua.dsa.user_backend.find_user(dict_req['name'])
             if dua.user:
-                if not dsa.user_backend.check_credentials(dua.user, dict_req['authentication']['simple']):
+                if not dua.dsa.user_backend.check_credentials(dua.user, dict_req['authentication']['simple']):
                     yield from asyncio.sleep(3)  # pause if invalid user
                     result = build_ldap_result(RESULT_INVALID_CREDENTIALS, diagnostic_message='invalid credentials')
-                    dua.user = dsa.user_backend.anonymous()
+                    dua.user = dua.dsa.user_backend.anonymous()
                 else:  # successful simple authentication
                     result = build_ldap_result(RESULT_SUCCESS, diagnostic_message='user authentication successful')
             else:
                 yield from asyncio.sleep(3)  # pause if not existent user
                 result = build_ldap_result(RESULT_INVALID_CREDENTIALS, diagnostic_message='user not found')
-                dua.user = dsa.user_backend.anonymous()
+                dua.user = dua.dsa.user_backend.anonymous()
         elif dict_req['authentication']['sasl']:  # sasl authentication
             result = build_ldap_result(RESULT_AUTH_METHOD_NOT_SUPPORTED, diagnostic_message='SASL not available')
-            dua.user = dsa.user_backend.anonymous()
+            dua.user = dua.dsa.user_backend.anonymous()
         else:  # undefined
             dua.abort()
             return None, None

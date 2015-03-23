@@ -26,5 +26,5 @@
 import asyncio
 
 @asyncio.coroutine
-def do_unbind_operation(self, user, message_id):
-    user.identity = 'unbound'
+def do_unbind_operation(dua, message_id):
+    dua.user = None
