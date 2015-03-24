@@ -59,7 +59,8 @@ class Dua(object):
             print('start_tls')
             ssl_context = ssl.create_default_context(purpose=ssl.Purpose.CLIENT_AUTH)
             ssl_context.load_cert_chain(self.dsa.cert_file, keyfile=self.dsa.key_file, password=self.dsa.key_file_password)
-            wrapped_socket = ssl_context.wrap_socket(self.writer.get_extra_info('socket'), server_side=True, do_handshake_on_connect=True)
+            wrapped_socket = ssl_context.wrap_socket(self.writer.get_extra_info('socket'), server_side=True, do_handshake_on_connect=False)
+            wrapped_socket.do_handshake(block=True)
             return True
 
         return False

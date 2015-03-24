@@ -45,5 +45,6 @@ def do_extended_operation(dua, message_id, dict_req):
         response = build_extended_response(result, '1.3.6.1.4.1.1466.20037')
     else:
         result = build_ldap_result(RESULT_PROTOCOL_ERROR, diagnostic_message='extended operation not supported')
+        response = build_extended_response(result)
 
     return response, 'extendedResp'
