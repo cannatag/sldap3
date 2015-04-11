@@ -1,0 +1,52 @@
+"""
+"""
+
+# Created on
+#
+# Author: Giovanni Cannata
+#
+# Copyright 2015 Giovanni Cannata
+#
+# This file is part of ldap3.
+#
+# ldap3 is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Lesser General Public License as published
+# by the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# ldap3 is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Lesser General Public License for more details.
+#
+# You should have received a copy of the GNU Lesser General Public License
+# along with ldap3 in the COPYING and COPYING.LESSER files.
+# If not, see <http://www.gnu.org/licenses/>.
+
+
+class UserBaseBackend(object):
+    def __init__(self):
+        pass
+
+    def find_user(self, identity):
+        raise NotImplementedError
+
+    def add_user(self, identity, authorization, credentials):
+        raise NotImplementedError
+
+    def del_user(self, identity):
+        raise NotImplementedError
+
+    def modify_user(self, identity, new_identity):
+        raise NotImplementedError
+
+    def check_credentials(self, user, credentials):
+        raise NotImplementedError
+
+    @classmethod
+    def unauthenticated(cls):
+        raise NotImplementedError
+
+    @classmethod
+    def anonymous(cls):
+        raise NotImplementedError
