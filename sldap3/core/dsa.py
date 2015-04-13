@@ -78,11 +78,14 @@ class Dsa(object):
             if trigger and not self.clients:
                 break
         print('Closing DSA', self.name)
+        self.stop()
+        print('DSA {} closed'.format(self.name))
+
+    def stop(self):
         if self.port:
             self.server.close()
         if self.secure_port:
             self.secure_server.close()
-        print('DSA {} closed'.format(self.name))
 
     def client_connected(self, reader, writer):
         dua = Dua(self.user_backend.anonymous(), reader, writer, self)
@@ -173,14 +176,13 @@ class Dsa(object):
                 dua.writer.close()
                 return
             elif dict_req['type'] == 'extendedReq':
-                print('xxx')
                 response, response_type = do_extended_operation(dua, message_id, dict_req)
                 print(response)
-                #if response['responseName'] == '1.3.6.1.4.1.1466.20037' and response['result'] == RESULT_SUCCESS:  # issue start_tls
-                print('start_tls')
-                ldap_message = build_ldap_message(message_id, response_type, response, None)
-                dua.send(ldap_message)
-                dua.start_tls()
+                if response['responseName'] == '1.3.6.1.4.1.1466.20037' and response['result'] == RESULT_SUCCESS:  # issue start_tls
+                    print('start_tls')
+                    ldap_message = build_ldap_message(message_id, response_type, response, None)
+                    dua.send(ldap_message)
+                    dua.start_tls()
                 response = None
             else:
                 dua.abort(diagnostic_message='unknown operation')

@@ -71,6 +71,7 @@ def build_controls_list(controls):
 
     return built_controls
 
+
 def decode_control(control):
     """
     decode control, return a 2-element tuple where the first element is the control oid
