@@ -53,6 +53,8 @@ class Sldap3Service (win32serviceutil.ServiceFramework):
         self.main()
 
     def main(self):
+        logging.info('Executing service...')
+
         user_backend = JsonUserBackend('localhost-users.json')
         user_backend.add_user('giovanni', 'admin', 'password')
         user_backend.add_user('beatrice', 'user', 'password')

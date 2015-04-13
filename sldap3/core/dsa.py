@@ -25,8 +25,9 @@
 
 import asyncio
 import ssl
-from ldap3 import RESULT_SUCCESS
 
+from pyasn1.codec.ber import decoder, encoder
+from ldap3 import RESULT_SUCCESS
 from ldap3.core.exceptions import LDAPExceptionError
 from ldap3.strategy.base import BaseStrategy
 from ldap3.operation.bind import bind_request_to_dict
@@ -37,16 +38,15 @@ from ldap3.operation.extended import extended_request_to_dict
 from ldap3.operation.modify import modify_request_to_dict
 from ldap3.operation.modifyDn import modify_dn_request_to_dict
 from ldap3.operation.search import search_request_to_dict
-from pyasn1.codec.ber import decoder, encoder
-
 from ldap3.protocol.rfc4511 import LDAPMessage
 from ldap3.protocol.rfc2696 import RealSearchControlValue
 from ldap3.protocol.oid import Oids
+
 from .dua import Dua
 from ..operation.bind import do_bind_operation
-from operation.extended import do_extended_operation
+from ..operation.extended import do_extended_operation
 from ..operation.unbind import do_unbind_operation
-from protocol.rfc4511 import build_ldap_message
+from ..protocol.rfc4511 import build_ldap_message
 
 
 class Dsa(object):

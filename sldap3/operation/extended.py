@@ -30,7 +30,8 @@ import asyncio
 #     requestValue     [1] OCTET STRING OPTIONAL }
 
 from ldap3 import RESULT_SUCCESS, RESULT_PROTOCOL_ERROR, RESULT_UNAVAILABLE
-from protocol.rfc4511 import build_ldap_result, build_extended_response
+
+from ..protocol.rfc4511 import build_ldap_result, build_extended_response
 
 
 @asyncio.coroutine

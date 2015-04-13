@@ -24,6 +24,8 @@
 # If not, see <http://www.gnu.org/licenses/>.
 
 import asyncio
+
+from pyasn1.codec.ber import decoder, encoder
 from ldap3 import SEQUENCE_TYPES, LDAPControlsError
 from ldap3.operation.abandon import abandon_request_to_dict
 from ldap3.operation.bind import bind_request_to_dict
@@ -34,13 +36,12 @@ from ldap3.operation.extended import extended_request_to_dict
 from ldap3.operation.modify import modify_request_to_dict
 from ldap3.operation.modifyDn import modify_dn_request_to_dict
 from ldap3.operation.search import search_request_to_dict
-from pyasn1.codec.ber import decoder, encoder
-
 from ldap3.protocol.rfc4511 import LDAPMessage, BindRequest, ResultCode, LDAPDN, BindResponse, LDAPString, Referral, \
     ServerSaslCreds, MessageID, ProtocolOp, Controls, Control
 from ldap3.protocol.rfc2696 import RealSearchControlValue
 from ldap3.protocol.oid import Oids
-from core.user import User
+
+from .user import User
 
 clients = dict()
 identities = dict()

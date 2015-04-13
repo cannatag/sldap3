@@ -22,11 +22,13 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with sldap3 in the COPYING and COPYING.LESSER files.
 # If not, see <http://www.gnu.org/licenses/>.
+
+import ssl
+
 from datetime import datetime
 from ldap3 import RESULT_PROTOCOL_ERROR
 from pyasn1.codec.ber import decoder, encoder
-from protocol.rfc4511 import build_extended_response, build_ldap_result, build_ldap_message
-import ssl
+from ..protocol.rfc4511 import build_extended_response, build_ldap_result, build_ldap_message
 
 
 class Dua(object):
