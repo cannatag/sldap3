@@ -1,0 +1,11 @@
+{
+    "package_folder": ".",
+    "email": "cannatag@gmail.com",
+    "status": "development - alpha",
+    "package_name": "sldap3",
+    "url": "https://github.com/cannatag/sldap3",
+    "description": "A strictly RFC 4511 conforming LDAP V3 pure Python server. Same codebase for Python 2, Python3, PyPy and PyPy 3",
+    "author": "Giovanni Cannata",
+    "version": "0.0.3a2",
+    "license": "LGPL v3"
+}

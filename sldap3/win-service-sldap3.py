@@ -15,7 +15,6 @@ logging.info('start log')
 try:
     from sldap3 import JsonUserBackend, Dsa, Instance
 except ImportError:
-    logging.error('PATH: ' + str(path))
     logging.error('sldap3 or ldap3 package missing')
     exit(1)
 
