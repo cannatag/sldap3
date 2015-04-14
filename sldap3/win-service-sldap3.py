@@ -45,7 +45,7 @@ class Sldap3Service (win32serviceutil.ServiceFramework):
             servicemanager.PYS_SERVICE_STARTED,
             (self._svc_name_, '')
         )
-        self.main2()
+        self.main()
         logging.info('Ending service...')
 
     def main(self):
