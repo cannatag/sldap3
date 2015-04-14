@@ -1,4 +1,4 @@
-* 0.0.2a2 2015.04.11
+* 0.0.3a0 2015.04.11
     - added extended operation structure
     - added multiple DSAs definition
 

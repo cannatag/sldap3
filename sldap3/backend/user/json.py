@@ -75,7 +75,7 @@ class JsonUserBackend(UserBaseBackend):
         return False
 
     def store(self):
-        json.dump({'users': self.users}, open(self.json_file, 'w'))
+        json.dump({'users': self.users}, open(self.json_file, 'w+'))
 
     @classmethod
     def unauthenticated(cls):
