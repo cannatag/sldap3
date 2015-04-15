@@ -4,6 +4,7 @@ import win32event
 import servicemanager
 import logging
 from multiprocessing import Process
+from time import sleep
 
 logging.basicConfig(
     filename='c:\\Temp\\sldap3.log',
@@ -13,16 +14,22 @@ logging.basicConfig(
 
 logging.info('start log')
 try:
+    import ldap3
+except ImportError:
+    logging.error('ldap3 package missing')
+    exit(1)
+
+try:
     from sldap3 import JsonUserBackend, Dsa, Instance
 except ImportError:
-    logging.error('sldap3 or ldap3 package missing')
-    exit(1)
+    logging.error('sldap3 package missing')
+    exit(2)
 
 
 class Sldap3Service (win32serviceutil.ServiceFramework):
     _svc_name_ = 'sldap3'
     _svc_display_name_ = 'sldap3 - LDAP Server'
-    _svc_description_ = 'A striclty RFC 4511 conforming LDAP V3 pure Python server'
+    _svc_description_ = 'A strictly RFC 4511 conforming LDAP V3 pure Python server'
 
     def __init__(self, args):
         logging.info('Initializing class...')
@@ -30,13 +37,13 @@ class Sldap3Service (win32serviceutil.ServiceFramework):
         win32serviceutil.ServiceFramework.__init__(self, args)
         self.stop_event = win32event.CreateEvent(None, 0, 0, None)
         self.instances = list()
+        self.stop_requested = False
 
     def SvcStop(self):
         self.ReportServiceStatus(win32service.SERVICE_STOP_PENDING)
         win32event.SetEvent(self.stop_event)
         logging.info('Stopping service...')
-        for instance in self.instances:
-            instance.stop()
+        self.stop_requested = True
 
     def SvcDoRun(self):
         logging.info('Running service...')
@@ -70,6 +77,12 @@ class Sldap3Service (win32serviceutil.ServiceFramework):
                 instance.process.join()
         elif len(self.instances) == 1:  # use the same thread
             self.instances[0].dsa.start()
+
+        while not self.stop_requested:
+            sleep(5)
+
+        for instance in self.instances:
+            instance.stop()
 
 if __name__ == '__main__':
     win32serviceutil.HandleCommandLine(Sldap3Service)
