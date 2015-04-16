@@ -1,10 +1,7 @@
-import win32serviceutil
-import win32service
-import win32event
-import servicemanager
 import logging
 from multiprocessing import Process
 from time import sleep
+import sys
 
 logging.basicConfig(
     filename='c:\\Temp\\sldap3.log',
@@ -13,17 +10,38 @@ logging.basicConfig(
 )
 
 logging.info('start log')
+
+try:
+    import win32serviceutil
+    import win32service
+    import win32event
+    import servicemanager
+except ImportError:
+    logging.error('pywin32 package missing')
+    sys.exit(1)
+
+sys.stderr = open('C:\\Temp\\pyasn1.log', 'a')  # patch for pyasn1 without access to stderr
+
+try:
+    import pyasn1
+except ImportError:
+    logging.error('pyasn1 package missing')
+    sys.exit(2)
+
+logging.debug(sys.path)
+
+
 try:
     import ldap3
 except ImportError:
     logging.error('ldap3 package missing')
-    exit(1)
+    sys.exit(3)
 
 try:
     from sldap3 import JsonUserBackend, Dsa, Instance
 except ImportError:
     logging.error('sldap3 package missing')
-    exit(2)
+    sys.exit(4)
 
 
 class Sldap3Service (win32serviceutil.ServiceFramework):
@@ -52,7 +70,7 @@ class Sldap3Service (win32serviceutil.ServiceFramework):
             servicemanager.PYS_SERVICE_STARTED,
             (self._svc_name_, '')
         )
-        # self.main()
+        self.main()
         logging.info('Ending service...')
 
     def main(self):
@@ -83,6 +101,8 @@ class Sldap3Service (win32serviceutil.ServiceFramework):
 
         for instance in self.instances:
             instance.stop()
+
+        logging.info('service stopped')
 
 if __name__ == '__main__':
     win32serviceutil.HandleCommandLine(Sldap3Service)
