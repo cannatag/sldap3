@@ -25,6 +25,6 @@
 
 
 class Instance(object):
-    def __init__(self, dsa, process=None):
+    def __init__(self, dsa, executor=None):
         self.dsa = dsa
-        self.process = process
+        self.executor = executor
