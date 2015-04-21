@@ -22,8 +22,13 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with sldap3 in the COPYING and COPYING.LESSER files.
 # If not, see <http://www.gnu.org/licenses/>.
+from .. import NATIVE_ASYNCIO
 
-import asyncio
+if NATIVE_ASYNCIO:
+    import asyncio
+else:
+    import trollius as asyncio
+
 import ssl
 
 from pyasn1.codec.ber import decoder, encoder
@@ -72,7 +77,10 @@ class Dsa(object):
             if len(self.clients) != last:
                 print('Clients on DSA ', self.name + ':', len(self.clients))
                 last = len(self.clients)
-            yield from asyncio.sleep(2)
+            if NATIVE_ASYNCIO:
+                yield from asyncio.sleep(2)
+            else:
+                yield From(asyncio.sleep(2))
             if self.clients:
                 trigger = True
             if trigger and not self.clients:
@@ -136,7 +144,11 @@ class Dsa(object):
             get_more_data = True
             while receiving:
                 if get_more_data:
-                    data = yield from dua.reader.read(4096)
+                    if NATIVE_ASYNCIO:
+                        data = yield from dua.reader.read(4096)
+                    else:
+                        data = yield From(dua.reader.read(4096))
+
                     unprocessed += data
                 if len(data) > 0:
                     length = BaseStrategy.compute_ldap_message_size(unprocessed)
@@ -170,11 +182,20 @@ class Dsa(object):
         if message_id not in dua.pending:
             dua.pending[message_id] = dict_req
             if dict_req['type'] == 'bindRequest':
-                response, response_type = yield from do_bind_operation(dua, message_id, dict_req)
+                if NATIVE_ASYNCIO:
+                    response, response_type = yield from do_bind_operation(dua, message_id, dict_req)
+                else:
+                    response, response_type = yield From(do_bind_operation(dua, message_id, dict_req))
             elif dict_req['type'] == 'unbindRequest':
-                yield from do_unbind_operation(dua, message_id)
+                if NATIVE_ASYNCIO:
+                    yield from do_unbind_operation(dua, message_id)
+                else:
+                    yield From(do_unbind_operation(dua, message_id))
                 dua.writer.close()
-                return
+                if NATIVE_ASYNCIO:
+                    return
+                else:
+                    raise Return()
             elif dict_req['type'] == 'extendedReq':
                 response, response_type = do_extended_operation(dua, message_id, dict_req)
                 print(response)
@@ -186,17 +207,26 @@ class Dsa(object):
                 response = None
             else:
                 dua.abort(diagnostic_message='unknown operation')
-                return
+                if NATIVE_ASYNCIO:
+                    return
+                else:
+                    raise Return()
 
             del dua.pending[message_id]
             if not response:  # notice of disconnection sent while doing operation
-                return
+                if NATIVE_ASYNCIO:
+                    return
+                else:
+                    raise Return()
             print('ID:', message_id, dict_req)
             controls = None  # TODO
             ldap_message = build_ldap_message(message_id, response_type, response, controls)
         else:  # pending message with same id of previous message
             dua.abort(diagnostic_message='duplicate message ID')
-            return
+            if NATIVE_ASYNCIO:
+                return
+            else:
+                raise Return()
         dua.send(ldap_message)
 
     def register_client(self, dua):

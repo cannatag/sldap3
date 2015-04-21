@@ -23,7 +23,12 @@
 # along with sldap3 in the COPYING and COPYING.LESSER files.
 # If not, see <http://www.gnu.org/licenses/>.
 
-import asyncio
+from .. import NATIVE_ASYNCIO
+
+if NATIVE_ASYNCIO:
+    import asyncio
+else:
+    import trollius as asyncio
 
 from ldap3 import RESULT_INVALID_CREDENTIALS, RESULT_SUCCESS, RESULT_PROTOCOL_ERROR, RESULT_AUTH_METHOD_NOT_SUPPORTED
 
@@ -63,13 +68,19 @@ def do_bind_operation(dua, message_id, dict_req):
             dua.user = dua.dsa.user_backend.find_user(dict_req['name'])
             if dua.user:
                 if not dua.dsa.user_backend.check_credentials(dua.user, dict_req['authentication']['simple']):
-                    yield from asyncio.sleep(3)  # pause if invalid user
+                    if NATIVE_ASYNCIO:
+                        yield from asyncio.sleep(3)  # pause if invalid user
+                    else:
+                        yield From(asyncio.sleep(3))  # pause if invalid user
                     result = build_ldap_result(RESULT_INVALID_CREDENTIALS, diagnostic_message='invalid credentials')
                     dua.user = dua.dsa.user_backend.anonymous()
                 else:  # successful simple authentication
                     result = build_ldap_result(RESULT_SUCCESS, diagnostic_message='user authentication successful')
             else:
-                yield from asyncio.sleep(3)  # pause if not existent user
+                if NATIVE_ASYNCIO:
+                    yield from asyncio.sleep(3)  # pause if not existent user
+                else:
+                    yield From(asyncio.sleep(3))  # pause if not existent user
                 result = build_ldap_result(RESULT_INVALID_CREDENTIALS, diagnostic_message='user not found')
                 dua.user = dua.dsa.user_backend.anonymous()
         elif dict_req['authentication']['sasl']:  # sasl authentication
@@ -77,8 +88,13 @@ def do_bind_operation(dua, message_id, dict_req):
             dua.user = dua.dsa.user_backend.anonymous()
         else:  # undefined
             dua.abort()
-            return None, None
-
+            if NATIVE_ASYNCIO:
+                return None, None
+            else:
+                raise Return((None, None))
     response = build_bind_response(result, server_sasl_credentials)
     print(dua.user.identity, response)
-    return response, 'bindResponse'
+    if NATIVE_ASYNCIO:
+        return response, 'bindResponse'
+    else:
+        raise Return((response, 'bindResponse'))

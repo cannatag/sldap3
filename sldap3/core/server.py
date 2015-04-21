@@ -23,7 +23,12 @@
 # along with ldap3 in the COPYING and COPYING.LESSER files.
 # If not, see <http://www.gnu.org/licenses/>.
 
-import asyncio
+from .. import NATIVE_ASYNCIO
+
+if NATIVE_ASYNCIO:
+    import asyncio
+else:
+    import trollius as asyncio
 
 from pyasn1.codec.ber import decoder, encoder
 from ldap3 import SEQUENCE_TYPES, LDAPControlsError
@@ -162,7 +167,10 @@ def do_bind_operation(message_id, dict_req, user):
         response['serverSaslCreds'] = ServerSaslCreds(server_sasl_credentials)
 
     user.identity = dict_req['name']
-    return response
+    if NATIVE_ASYNCIO:
+        return response
+    else:
+        raise Return(response)
 
 @asyncio.coroutine
 def do_unbind_operation(message_id, user):
@@ -176,12 +184,21 @@ def perform_request(writer, request, user):
     message_id = int(request.getComponentByName('messageID'))
     dict_req = decode_request(request)
     if dict_req['type'] == 'bindRequest':
-        response = yield from do_bind_operation(message_id, dict_req, user)
+        if NATIVE_ASYNCIO:
+            response = yield from do_bind_operation(message_id, dict_req, user)
+        else:
+            response = yield From(do_bind_operation(message_id, dict_req, user))
         response_type = 'bindResponse'
     elif dict_req['type'] == 'unbindRequest':
-        yield from do_unbind_operation(message_id, user)
+        if NATIVE_ASYNCIO:
+            yield from do_unbind_operation(message_id, user)
+        else:
+            yield From(do_unbind_operation(message_id, user))
         writer.close()
-        return
+        if NATIVE_ASYNCIO:
+            return
+        else:
+            raise Return()
 
     print('ID:', message_id, dict_req)
     ldap_message = LDAPMessage()
@@ -233,7 +250,10 @@ def handle_client(reader, writer, user):
         get_more_data = True
         while receiving:
             if get_more_data:
-                data = yield from reader.read(4096)
+                if NATIVE_ASYNCIO:
+                    data = yield from reader.read(4096)
+                else:
+                    data = yield From(reader.read(4096))
                 unprocessed += data
             if len(data) > 0:
                 length = compute_ldap_message_size(unprocessed)
@@ -253,7 +273,11 @@ def handle_client(reader, writer, user):
         print('received {} bytes'.format(len(data)))
 
         if messages:
-            yield from process_messages(writer, messages, user)
-            yield from writer.drain()
+            if NATIVE_ASYNCIO:
+                yield from process_messages(writer, messages, user)
+                yield from writer.drain()
+            else:
+                yield From(process_messages(writer, messages, user))
+                yield From(writer.drain())
 
     print('exit handle')

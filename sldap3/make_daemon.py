@@ -32,7 +32,7 @@ import sys
 logging.basicConfig(
     filename='/var/log/sldap3.log',
     level=logging.DEBUG,
-    format='[sldap3-service] %(levelname)-7.7s %(message)s'
+    format='%(asctime)s - %(name)s - %(levelname)-7.7s - %(message)s'
 )
 
 try:
@@ -42,9 +42,9 @@ except ImportError:
     sys.exit(5)
 
 try:
-    import daemon
+    from pep3143daemon import DaemonContext, PidFile
 except ImportError:
-    logging.error('python-daemon package missing')
+    logging.error('pep3143daemon package missing')
     sys.exit(6)
 
 try:
@@ -66,43 +66,43 @@ except ImportError:
     sys.exit(4)
 
 
-class Sldap3Daemon():
-    def __init__(self):
-        self.stdin_path = '/dev/null'
-        self.stdout_path = '/dev/tty'
-        self.stderr_path = '/dev/tty'
-        self.pidfile_path = '/var/run/sldap3.pid'
-        self.pidfile_timeout = 5
+def run():
+    instances = []
+    logging.info('Executing service...')
+    user_backend = sldap3.JsonUserBackend('localhost-users.json')
+    user_backend.add_user('giovanni', 'admin', 'password')
+    user_backend.add_user('beatrice', 'user', 'password')
+    user_backend.store()
 
-    def run(self):
-        instances = []
-        logging.info('Executing service...')
-        user_backend = sldap3.JsonUserBackend('localhost-users.json')
-        user_backend.add_user('giovanni', 'admin', 'password')
-        user_backend.add_user('beatrice', 'user', 'password')
-        user_backend.store()
+    dsa1 = sldap3.Instance(
+        sldap3.Dsa('DSA1', '0.0.0.0', cert_file='C:\\Temp\\server-cert.pem', key_file='C:\\Temp\\server-key.pem',
+                   user_backend=user_backend))
+    dsa2 = sldap3.Instance(sldap3.Dsa('DSA2', '0.0.0.0', port=1389, user_backend=user_backend))
 
-        dsa1 = sldap3.Instance(
-            sldap3.Dsa('DSA1', '0.0.0.0', cert_file='C:\\Temp\\server-cert.pem', key_file='C:\\Temp\\server-key.pem',
-                       user_backend=user_backend))
-        dsa2 = sldap3.Instance(sldap3.Dsa('DSA2', '0.0.0.0', port=1389, user_backend=user_backend))
+    instances.append(dsa1)
+    instances.append(dsa2)
 
-        instances.append(dsa1)
-        instances.append(dsa2)
+    for instance in instances:  # start each instance in a new thread
+        instance.executor = Thread(target=instance.dsa.start)
+        instance.executor.start()
 
-        for instance in instances:  # start each instance in a new thread
-            instance.executor = Thread(target=instance.dsa.start)
-            instance.executor.start()
+    # while not stop_requested:  # wait for stop signal
+    # sleep(5)
 
-        # while not stop_requested:  # wait for stop signal
-        # sleep(5)
+    for instance in instances:  # wait for all instances to end
+        instance.stop()
 
-        for instance in instances:  # wait for all instances to end
-            instance.stop()
-
-        logging.info('Service stopped')
+    logging.info('Service stopped')
 
 
 if __name__ == '__main__':
-    daemon_runner = daemon.runner.DaemonRunner(Sldap3Daemon())
-    daemon_runner.do_action()
+    pid = '/tmp/sldap3.pid'
+    pidfile = PidFile(pid)
+    daemon = DaemonContext(pidfile=pidfile)
+
+    logging.info('Demonizing')
+
+    # daemon.open()
+    logging.info('Demonized')
+    run()
+    logging.info('Done')
