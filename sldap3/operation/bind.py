@@ -29,6 +29,7 @@ if NATIVE_ASYNCIO:
     import asyncio
 else:
     import trollius as asyncio
+    from trollius import From, Return
 
 from ldap3 import RESULT_INVALID_CREDENTIALS, RESULT_SUCCESS, RESULT_PROTOCOL_ERROR, RESULT_AUTH_METHOD_NOT_SUPPORTED
 

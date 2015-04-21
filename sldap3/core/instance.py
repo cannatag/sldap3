@@ -23,8 +23,30 @@
 # along with sldap3 in the COPYING and COPYING.LESSER files.
 # If not, see <http://www.gnu.org/licenses/>.
 
+from threading import Thread
+# from multiprocessing import Process
+import logging
 
 class Instance(object):
     def __init__(self, dsa, executor=None):
         self.dsa = dsa
-        self.executor = executor
+        if executor:
+            self.executor = executor
+        else:
+            self.executor = Thread(target=self.dsa.start)
+
+        self.started = False
+
+    def start(self):
+        if not self.started:
+            logging.info('starting instance %s' % self.dsa.name)
+            self.executor.start()
+            self.started = True
+
+    def stop(self):
+        if self.started:
+            logging.info('stopping instance %s' % self.dsa.name)
+            self.dsa.stop()
+            self.executor.join()
+            logging.info('instance $s joined' % self.dsa.name)
+            self.started = False

@@ -24,9 +24,6 @@
 # If not, see <http://www.gnu.org/licenses/>.
 
 import logging
-# from multiprocessing import Process
-from threading import Thread
-from time import sleep
 import sys
 
 logging.basicConfig(
@@ -64,6 +61,7 @@ try:
 except ImportError:
     try:
         import trollius as asyncio
+        from trollius import From, Return
     except:
         logging.error('trollius package missing')
         sys.exit(4)
@@ -75,43 +73,50 @@ except ImportError:
     sys.exit(5)
 
 
-def run():
-    instances = []
-    logging.info('Executing service...')
-    user_backend = sldap3.JsonUserBackend('localhost-users.json')
-    user_backend.add_user('giovanni', 'admin', 'password')
-    user_backend.add_user('beatrice', 'user', 'password')
-    user_backend.store()
+class Sldap3Daemon(DaemonContext):
+    def run(self):
+        logging.info('Executing service...')
+        self.instances = []
+        user_backend = sldap3.JsonUserBackend('/root/sldap3/test/localhost-users.json')
+        user_backend.add_user('giovanni', 'admin', 'password')
+        user_backend.add_user('beatrice', 'user', 'password')
+        user_backend.store()
 
-    dsa1 = sldap3.Instance(
-        sldap3.Dsa('DSA1', '0.0.0.0', cert_file='C:\\Temp\\server-cert.pem', key_file='C:\\Temp\\server-key.pem',
-                   user_backend=user_backend))
-    dsa2 = sldap3.Instance(sldap3.Dsa('DSA2', '0.0.0.0', port=1389, user_backend=user_backend))
+        dsa1 = sldap3.Instance(
+            sldap3.Dsa('DSA1',
+                       '0.0.0.0',
+                       cert_file='/root/sldap3/test/server-cert.pem',
+                       key_file='/root/sldap3/test/server-key.pem',
+                       user_backend=user_backend))
+        dsa2 = sldap3.Instance(
+            sldap3.Dsa('DSA2',
+                       '0.0.0.0',
+                       port=1389,
+                       user_backend=user_backend))
 
-    instances.append(dsa1)
-    instances.append(dsa2)
+        self.instances.append(dsa1)
+        self.instances.append(dsa2)
 
-    for instance in instances:  # start each instance in a new thread
-        instance.executor = Thread(target=instance.dsa.start)
-        instance.executor.start()
+        for instance in self.instances:  # start each instance in a new thread
+            instance.start()
 
-    # while not stop_requested:  # wait for stop signal
-    # sleep(5)
+        logging.info('run done')
 
-    for instance in instances:  # wait for all instances to end
-        instance.stop()
-
-    logging.info('Service stopped')
-
+    def terminate(self, signal_number, stack_frame):
+        logging.info('terminating')
+        for instance in self.instances:  # wait for all instances to end
+            logging.debug('instance stopping')
+            instance.stop()
+            logging.debug('instance stopped')
+        logging.info('terminated')
 
 if __name__ == '__main__':
     pid = '/tmp/sldap3.pid'
     pidfile = PidFile(pid)
-    daemon = DaemonContext(pidfile=pidfile)
-
-    logging.info('Demonizing')
-
-    # daemon.open()
-    logging.info('Demonized')
-    run()
-    logging.info('Done')
+    daemon = Sldap3Daemon(pidfile=pidfile)
+    daemon.files_preserve = [logging.getLogger().handlers[0].stream]  # preserve log file
+    logging.info('demonizing')
+    daemon.open()
+    logging.info('demonized')
+    daemon.run()
+    logging.info('done')

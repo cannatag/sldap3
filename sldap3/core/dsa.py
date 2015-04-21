@@ -28,8 +28,10 @@ if NATIVE_ASYNCIO:
     import asyncio
 else:
     import trollius as asyncio
+    from trollius import From, Return
 
 import ssl
+import logging
 
 from pyasn1.codec.ber import decoder, encoder
 from ldap3 import RESULT_SUCCESS
@@ -90,12 +92,16 @@ class Dsa(object):
         print('DSA {} closed'.format(self.name))
 
     def stop(self):
+        logging.info('stopping DSA %s' % self.name)
         if self.port:
+            logging.debug('closing server for DSA %s' % self.name)
             self.server.close()
         if self.secure_port:
+            logging.debug('closing secure server for DSA %s' % self.name)
             self.secure_server.close()
 
     def client_connected(self, reader, writer):
+        logging.debug('client connected from')
         dua = Dua(self.user_backend.anonymous(), reader, writer, self)
         self.register_client(dua)
 
@@ -103,12 +109,15 @@ class Dsa(object):
         self.loop = asyncio.new_event_loop()
         self.loop.private_dsa = self
         asyncio.set_event_loop(self.loop)
+        logging.info('starting DSA %s' % self.name)
 
         if self.port:  # start unsecure server
+            logging.debug('starting server for DSA %s' % self.name)
             coro = asyncio.start_server(self.client_connected, self.address, self.port)
             self.server = self.loop.run_until_complete(coro)
 
         if self.secure_port:  # start secure server
+            logging.debug('starting secure server for DSA %s' % self.name)
             ssl_context = ssl.create_default_context(purpose=ssl.Purpose.CLIENT_AUTH)
             ssl_context.load_cert_chain(self.cert_file, keyfile=self.key_file, password=self.key_file_password)
             secure_coro = asyncio.start_server(self.client_connected, self.address, self.secure_port, ssl=ssl_context)

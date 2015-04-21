@@ -29,6 +29,7 @@ if NATIVE_ASYNCIO:
     import asyncio
 else:
     import trollius as asyncio
+    from trollius import From, Return
 
 @asyncio.coroutine
 def do_unbind_operation(dua, message_id):

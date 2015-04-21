@@ -29,6 +29,8 @@ if NATIVE_ASYNCIO:
     import asyncio
 else:
     import trollius as asyncio
+    from trollius import From, Return
+
 
 from pyasn1.codec.ber import decoder, encoder
 from ldap3 import SEQUENCE_TYPES, LDAPControlsError

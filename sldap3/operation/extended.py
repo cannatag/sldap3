@@ -29,6 +29,8 @@ if NATIVE_ASYNCIO:
     import asyncio
 else:
     import trollius as asyncio
+    from trollius import From, Return
+
 
 # ExtendedRequest ::= [APPLICATION 23] SEQUENCE {
 #     requestName      [0] LDAPOID,
