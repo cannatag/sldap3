@@ -60,10 +60,19 @@ except ImportError:
     sys.exit(3)
 
 try:
+    from asyncio import BaseEventLoop
+except ImportError:
+    try:
+        import trollius as asyncio
+    except:
+        logging.error('trollius package missing')
+        sys.exit(4)
+
+try:
     import sldap3
 except ImportError:
     logging.error('sldap3 package missing')
-    sys.exit(4)
+    sys.exit(5)
 
 
 def run():
