@@ -76,10 +76,14 @@ For information and suggestions you can contact me at cannatag@gmail.com or you 
 Changelog
 ---------
 
+* 0.0.3a6 2015.04.21
+    - Added backward compatability via the trollius package
+    - Added Linux daemon capability
+    - Added Windows service capability
+
 * 0.0.3a0 2015.04.11
     - added extended operation structure
     - added multiple DSAs definition
-
 
 * 0.0.2a 2015.03.13
     - Added event loop

@@ -23,7 +23,14 @@
 # along with sldap3 in the COPYING and COPYING.LESSER files.
 # If not, see <http://www.gnu.org/licenses/>.
 
-import asyncio
+from .. import NATIVE_ASYNCIO
+
+if NATIVE_ASYNCIO:
+    import asyncio
+else:
+    import trollius as asyncio
+    from trollius import From, Return
+
 
 # ExtendedRequest ::= [APPLICATION 23] SEQUENCE {
 #     requestName      [0] LDAPOID,
@@ -32,7 +39,6 @@ import asyncio
 from ldap3 import RESULT_SUCCESS, RESULT_PROTOCOL_ERROR, RESULT_UNAVAILABLE
 
 from ..protocol.rfc4511 import build_ldap_result, build_extended_response
-
 
 @asyncio.coroutine
 def do_extended_operation(dua, message_id, dict_req):
@@ -48,4 +54,7 @@ def do_extended_operation(dua, message_id, dict_req):
         result = build_ldap_result(RESULT_PROTOCOL_ERROR, diagnostic_message='extended operation not supported')
         response = build_extended_response(result)
 
-    return response, 'extendedResp'
+    if NATIVE_ASYNCIO:
+        return response, 'extendedResp'
+    else:
+        raise Response((response, 'extendedRespo'))
