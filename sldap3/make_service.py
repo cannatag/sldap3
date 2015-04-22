@@ -24,10 +24,9 @@
 # If not, see <http://www.gnu.org/licenses/>.
 
 import logging
-# from multiprocessing import Process
-from threading import Thread
 from time import sleep
 import sys
+from sldap3 import EXEC_THREAD, EXEC_PROCESS
 
 logging.basicConfig(
     filename='c:\\Temp\\sldap3.log',
@@ -68,12 +67,12 @@ except ImportError:
         logging.error('trollius package missing')
         sys.exit(4)
 
-
 try:
     import sldap3
 except ImportError:
     logging.error('sldap3 package missing')
     sys.exit(5)
+
 
 class Sldap3Service (win32serviceutil.ServiceFramework):
     _svc_name_ = 'sldap3'
@@ -89,44 +88,60 @@ class Sldap3Service (win32serviceutil.ServiceFramework):
     def SvcStop(self):
         self.ReportServiceStatus(win32service.SERVICE_STOP_PENDING)
         win32event.SetEvent(self.stop_event)
-        logging.info('Stopping service...')
+        logging.info('stopping sldap3 service...')
         self.stop_requested = True
 
     def SvcDoRun(self):
-        logging.info('Running service...')
+        logging.info('running sldap3 service...')
         servicemanager.LogMsg(
             servicemanager.EVENTLOG_INFORMATION_TYPE,
             servicemanager.PYS_SERVICE_STARTED,
             (self._svc_name_, '')
         )
-        self.main()
-        logging.info('Ending service...')
+        self.run()
+        logging.info('ending sldap3 service...')
 
-    def main(self):
-        logging.info('Executing service...')
+    def run(self):
+        logging.info('executing sldap3 service...')
 
-        user_backend = sldap3.JsonUserBackend('localhost-users.json')
+        logging.info('instantiating sldap3 daemon')
+        self.instances = []
+        user_backend = sldap3.JsonUserBackend('/root/sldap3/test/localhost-users.json')
         user_backend.add_user('giovanni', 'admin', 'password')
         user_backend.add_user('beatrice', 'user', 'password')
         user_backend.store()
 
-        dsa1 = sldap3.Instance(sldap3.Dsa('DSA1', '0.0.0.0', cert_file='C:\\Temp\\server-cert.pem', key_file='C:\\Temp\\server-key.pem', user_backend=user_backend))
-        dsa2 = sldap3.Instance(sldap3.Dsa('DSA2', '0.0.0.0', port=1389, user_backend=user_backend))
+        dsa1 = sldap3.Instance(
+            sldap3.Dsa('DSA1',
+                       '0.0.0.0',
+                       cert_file='/root/sldap3/test/server-cert.pem',
+                       key_file='/root/sldap3/test/server-key.pem',
+                       user_backend=user_backend),
+            name='MixedInstance',
+            executor=EXEC_THREAD)
+        dsa2 = sldap3.Instance(
+            sldap3.Dsa('DSA2',
+                       '0.0.0.0',
+                       port=1389,
+                       user_backend=user_backend),
+            name='UnsecureInstance',
+            executor=EXEC_THREAD)
 
         self.instances.append(dsa1)
         self.instances.append(dsa2)
 
         for instance in self.instances:  # start each instance in a new thread
-            instance.executor = Thread(target=instance.dsa.start)
-            instance.executor.start()
+            instance.start()
+
+        logging.info('sldap3 daemon instantiation complete')
 
         while not self.stop_requested:  # wait for stop signal
-            sleep(5)
+            sleep(3)
 
         for instance in self.instances:  # wait for all instances to end
             instance.stop()
 
-        logging.info('Service stopped')
+        logging.info('sldap3 service stopped')
 
 if __name__ == '__main__':
     win32serviceutil.HandleCommandLine(Sldap3Service)

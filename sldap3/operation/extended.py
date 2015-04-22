@@ -23,6 +23,8 @@
 # along with sldap3 in the COPYING and COPYING.LESSER files.
 # If not, see <http://www.gnu.org/licenses/>.
 
+import logging
+
 from .. import NATIVE_ASYNCIO
 
 if NATIVE_ASYNCIO:
@@ -42,7 +44,7 @@ from ..protocol.rfc4511 import build_ldap_result, build_extended_response
 
 @asyncio.coroutine
 def do_extended_operation(dua, message_id, dict_req):
-    print('do extended operation', dict_req)
+    logging.debug('do EXTENDED operation for DUA %s: %s' % (dua.identity, str(dict_req)))
 
     if dict_req['name'] == '1.3.6.1.4.1.1466.20037':  # start_tls
         if dua.dsa.secure_port:

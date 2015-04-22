@@ -23,30 +23,58 @@
 # along with sldap3 in the COPYING and COPYING.LESSER files.
 # If not, see <http://www.gnu.org/licenses/>.
 
-from threading import Thread
+# from threading import Thread
 # from multiprocessing import Process
 import logging
+from .. import EXEC_PROCESS, EXEC_THREAD
+
+from .. import NATIVE_ASYNCIO
+from time import sleep
+
+if NATIVE_ASYNCIO:
+    import asyncio
+else:
+    import trollius as asyncio
+    from trollius import From, Return
+
 
 class Instance(object):
-    def __init__(self, dsa, executor=None):
+    def __init__(self, dsa, name=None, executor=EXEC_THREAD):
         self.dsa = dsa
-        if executor:
-            self.executor = executor
-        else:
+        self.dsa.instance = self
+        self.loop = None
+        self.name = self.dsa.name if not name else name
+        if executor == EXEC_THREAD:
+            from threading import Thread
             self.executor = Thread(target=self.dsa.start)
+        elif executor == EXEC_PROCESS:
+            from multiprocessing import Process
+            self.executor = Process(target=self.dsa.start)
+        else:
+            raise Exception('unknown executor')
 
         self.started = False
 
     def start(self):
         if not self.started:
-            logging.info('starting instance %s' % self.dsa.name)
+            logging.info('starting instance %s' % self.name)
             self.executor.start()
             self.started = True
 
     def stop(self):
         if self.started:
-            logging.info('stopping instance %s' % self.dsa.name)
+            logging.info('stopping instance %s' % self.name)
             self.dsa.stop()
+            logging.debug('stopping loop for instance %s' % self.name)
+            self.loop.call_soon_threadsafe(self.loop.stop)
+            logging.debug('closing loop for instance %s' % self.name)
+            while self.loop.is_running():
+                logging.debug('waiting for Instance %s loop to stop' % self.name)
+                sleep(0.2)
+            self.loop.call_soon_threadsafe(self.loop.close)
+            logging.info('Instance %s loop halted and closed' % self.name)
+            logging.debug('waiting for instance %s executor to join' % self.name)
             self.executor.join()
-            logging.info('instance $s joined' % self.dsa.name)
+            logging.debug('instance %s joined' % self.name)
             self.started = False
+            logging.info('stopped instance %s' % self.name)

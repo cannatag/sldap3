@@ -32,6 +32,7 @@ else:
 
 import ssl
 import logging
+from time import sleep
 
 from pyasn1.codec.ber import decoder, encoder
 from ldap3 import RESULT_SUCCESS
@@ -61,7 +62,7 @@ class Dsa(object):
         self.clients = dict()
         self.server = None
         self.secure_server = None
-        self.loop = None
+        self.instance = None
         self.name = name
         self.address = address
         self.port = port
@@ -71,76 +72,72 @@ class Dsa(object):
         self.user_backend = user_backend
         self.secure_port = secure_port if self.cert_file else None
 
-    @asyncio.coroutine
-    def status(self):
-        last = None
-        trigger = False
-        while True:
-            if len(self.clients) != last:
-                print('Clients on DSA ', self.name + ':', len(self.clients))
-                last = len(self.clients)
-            if NATIVE_ASYNCIO:
-                yield from asyncio.sleep(2)
-            else:
-                yield From(asyncio.sleep(2))
-            if self.clients:
-                trigger = True
-            if trigger and not self.clients:
-                break
-        print('Closing DSA', self.name)
-        self.stop()
-        print('DSA {} closed'.format(self.name))
+    # @asyncio.coroutine
+    # def status(self):
+    #     last = None
+    #     trigger = False
+    #     while True:
+    #         if len(self.clients) != last:
+    #             print('Clients on DSA ', self.name + ':', len(self.clients))
+    #             last = len(self.clients)
+    #         if NATIVE_ASYNCIO:
+    #             yield from asyncio.sleep(2)
+    #         else:
+    #             yield From(asyncio.sleep(2))
+    #         if self.clients:
+    #             trigger = True
+    #         if trigger and not self.clients:
+    #             break
+    #     print('Closing DSA', self.name)
+    #     self.stop()
+    #     print('DSA {} closed'.format(self.name))
 
     def stop(self):
         logging.info('stopping DSA %s' % self.name)
         if self.port:
-            logging.debug('closing server for DSA %s' % self.name)
-            self.server.close()
+            logging.debug('closing unsecure server for DSA %s' % self.name)
+            while not self.server:  # wait for server object to appear
+                logging.debug('waiting for DSA %s server to appear' % self.name)
+                sleep(0.2)
+            self.instance.loop.call_soon_threadsafe(self.server.close)
         if self.secure_port:
             logging.debug('closing secure server for DSA %s' % self.name)
-            self.secure_server.close()
+            while not self.secure_server:  # wait for secure server object to appear
+                logging.debug('waiting for DSA %s secure server to appear' % self.name)
+                sleep(0.2)
+            self.instance.loop.call_soon_threadsafe(self.secure_server.close)
 
     def client_connected(self, reader, writer):
         logging.debug('client connected from')
         dua = Dua(self.user_backend.anonymous(), reader, writer, self)
         self.register_client(dua)
 
-    def start(self):
-        self.loop = asyncio.new_event_loop()
-        self.loop.private_dsa = self
-        asyncio.set_event_loop(self.loop)
+    def start(self):  # executed in an Executor start() method
+        self.instance.loop = asyncio.new_event_loop()
+        self.instance.loop.set_debug(True)
+        asyncio.set_event_loop(self.instance.loop)
         logging.info('starting DSA %s' % self.name)
 
         if self.port:  # start unsecure server
-            logging.debug('starting server for DSA %s' % self.name)
+            logging.debug('starting unsecure server for DSA %s' % self.name)
             coro = asyncio.start_server(self.client_connected, self.address, self.port)
-            self.server = self.loop.run_until_complete(coro)
+            self.server = self.instance.loop.run_until_complete(coro)
+            logging.debug('started unsecure server for DSA %s: %s' % (self.name, self.server))
 
         if self.secure_port:  # start secure server
             logging.debug('starting secure server for DSA %s' % self.name)
             ssl_context = ssl.create_default_context(purpose=ssl.Purpose.CLIENT_AUTH)
             ssl_context.load_cert_chain(self.cert_file, keyfile=self.key_file, password=self.key_file_password)
             secure_coro = asyncio.start_server(self.client_connected, self.address, self.secure_port, ssl=ssl_context)
-            self.secure_server = self.loop.run_until_complete(secure_coro)
+            self.secure_server = self.instance.loop.run_until_complete(secure_coro)
+            logging.debug('started secure server for DSA %s: %s' % (self.name, self.server))
 
-        print('DSA {} started'.format(self.name))
-        self.loop.create_task(self.status())
+        logging.info('DSA {} started'.format(self.name))
 
-        try:
-            if self.port:
-                self.loop.run_until_complete(self.server.wait_closed())
-            if self.secure_port:
-                self.loop.run_until_complete(self.secure_server.wait_closed())
-        except KeyboardInterrupt:
-            print('forced exit DSA')
-            if self.port:
-                self.server.close()
-            if self.secure_port:
-                self.secure_server.close()
-            print('DSA closed')
-        finally:
-            self.loop.close()
-            print('loop closed')
+        if self.port:
+            self.instance.loop.run_until_complete(self.server.wait_closed())
+        if self.secure_port:
+            self.instance.loop.run_until_complete(self.secure_server.wait_closed())
 
     @asyncio.coroutine
     def handle_client(self, dua):
@@ -174,15 +171,15 @@ class Dsa(object):
                             receiving = False
                 else:
                     receiving = False
-            print('received {} bytes for server {}'.format(len(data), self.name))
+            logging.debug('received {} bytes for server {}'.format(len(data), self.name))
             if messages:
                 for request in messages:
                     while len(request) > 0:
                         ldap_req, unprocessed = decoder.decode(request, asn1Spec=LDAPMessage())
                         request = unprocessed
-                        self.loop.create_task(self.perform_request(dua, ldap_req))
-                    print('processed request for server', self.name)
-        print('exit handle for server', self.name)
+                        self.instance.loop.create_task(self.perform_request(dua, ldap_req))
+                    logging.debug('processed request for server %s' % self.name)
+        logging.info('exit handle for server %s' % self.name)
 
     @asyncio.coroutine
     def perform_request(self, dua, request):
@@ -207,9 +204,7 @@ class Dsa(object):
                     raise Return()
             elif dict_req['type'] == 'extendedReq':
                 response, response_type = do_extended_operation(dua, message_id, dict_req)
-                print(response)
                 if response['responseName'] == '1.3.6.1.4.1.1466.20037' and response['result'] == RESULT_SUCCESS:  # issue start_tls
-                    print('start_tls')
                     ldap_message = build_ldap_message(message_id, response_type, response, None)
                     dua.send(ldap_message)
                     dua.start_tls()
@@ -227,7 +222,6 @@ class Dsa(object):
                     return
                 else:
                     raise Return()
-            print('ID:', message_id, dict_req)
             controls = None  # TODO
             ldap_message = build_ldap_message(message_id, response_type, response, controls)
         else:  # pending message with same id of previous message
@@ -239,12 +233,12 @@ class Dsa(object):
         dua.send(ldap_message)
 
     def register_client(self, dua):
-        task = self.loop.create_task(self.handle_client(dua))
-        print('new connection on server', self.name)
+        task = self.instance.loop.create_task(self.handle_client(dua))
+        logging.debug('new connection on DSA %s' % self.name)
         self.clients[task] = dua
 
         def client_done(task_done):
-            print('closing connection on server', self.name, 'for identity', dua.user.identity)
+            logging.debug('closing connection on server %s for identity %s' % (self.name, dua.user.identity))
             self.unregister_client(task_done)
             dua.writer.close()
 

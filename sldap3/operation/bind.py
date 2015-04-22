@@ -23,6 +23,8 @@
 # along with sldap3 in the COPYING and COPYING.LESSER files.
 # If not, see <http://www.gnu.org/licenses/>.
 
+import logging
+
 from .. import NATIVE_ASYNCIO
 
 if NATIVE_ASYNCIO:
@@ -53,7 +55,7 @@ from ..protocol.rfc4511 import build_ldap_result, build_bind_response
 
 @asyncio.coroutine
 def do_bind_operation(dua, message_id, dict_req):
-    print('do bind operation', dict_req)
+    logging.debug('do BIND operation for DUA %s: %s' % (dua.identity, str(dict_req)))
     while len(dua.pending) > 1:  # wait until only the bind operation is in the pending dict
         asyncio.sleep(0.1)
 
@@ -94,7 +96,6 @@ def do_bind_operation(dua, message_id, dict_req):
             else:
                 raise Return((None, None))
     response = build_bind_response(result, server_sasl_credentials)
-    print(dua.user.identity, response)
     if NATIVE_ASYNCIO:
         return response, 'bindResponse'
     else:

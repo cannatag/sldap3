@@ -23,6 +23,7 @@
 # along with ldap3 in the COPYING and COPYING.LESSER files.
 # If not, see <http://www.gnu.org/licenses/>.
 
+import logging
 from os import linesep
 from threading import Lock
 from datetime import datetime
@@ -80,7 +81,7 @@ class Dsa(object):
 
     def produce_response(self, connection_id):
         message_id = min(self.ready_to_send.keys())
-        print('SERVER: processing response', message_id)
+        logging.debug('SERVER: processing response ' + message_id)
         if message_id in self.ready_to_send:
             ldap_message = LDAPMessage()
             ldap_message['messageID'] = MessageID(message_id)
@@ -93,7 +94,7 @@ class Dsa(object):
 
     def accept_request(self, connection_id, ldap_message):
         request = BaseStrategy.decode_request(ldap_message)
-        print('SERVER: processing request', request, 'for', connection_id)
+        logging.debug('SERVER: processing request ' + request + ' for ' + connection_id)
 
         response = None
         if request['type'] == 'bindRequest':

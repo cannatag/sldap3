@@ -24,6 +24,7 @@
 # If not, see <http://www.gnu.org/licenses/>.
 
 import ssl
+import logging
 
 from datetime import datetime
 from ldap3 import RESULT_PROTOCOL_ERROR
@@ -58,7 +59,7 @@ class Dua(object):
 
     def start_tls(self):
         if not self.tls_started:
-            print('start_tls')
+            logging.debug('start_tls')
             ssl_context = ssl.create_default_context(purpose=ssl.Purpose.CLIENT_AUTH)
             ssl_context.load_cert_chain(self.dsa.cert_file, keyfile=self.dsa.key_file, password=self.dsa.key_file_password)
             wrapped_socket = ssl_context.wrap_socket(self.writer.get_extra_info('socket'), server_side=True, do_handshake_on_connect=False)
