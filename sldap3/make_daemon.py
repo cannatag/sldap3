@@ -25,6 +25,7 @@
 
 import logging
 import sys
+from sldap3 import EXEC_THREAD
 
 logging.basicConfig(
     filename='/var/log/sldap3.log',
@@ -35,7 +36,7 @@ logging.basicConfig(
 try:
     import resource
 except ImportError:
-    logging.error('deamons are available only on Linux')
+    logging.error('deamons are available on Linux platform only')
     sys.exit(5)
 
 try:
@@ -75,7 +76,7 @@ except ImportError:
 
 class Sldap3Daemon(DaemonContext):
     def run(self):
-        logging.info('Executing service...')
+        logging.info('instantiating sldap3 daemon')
         self.instances = []
         user_backend = sldap3.JsonUserBackend('/root/sldap3/test/localhost-users.json')
         user_backend.add_user('giovanni', 'admin', 'password')
@@ -87,12 +88,16 @@ class Sldap3Daemon(DaemonContext):
                        '0.0.0.0',
                        cert_file='/root/sldap3/test/server-cert.pem',
                        key_file='/root/sldap3/test/server-key.pem',
-                       user_backend=user_backend))
+                       user_backend=user_backend),
+            name='MixedInstance',
+            executor=EXEC_THREAD)
         dsa2 = sldap3.Instance(
             sldap3.Dsa('DSA2',
                        '0.0.0.0',
                        port=1389,
-                       user_backend=user_backend))
+                       user_backend=user_backend),
+            name='UnsecureInstance',
+            executor=EXEC_THREAD)
 
         self.instances.append(dsa1)
         self.instances.append(dsa2)
@@ -100,23 +105,23 @@ class Sldap3Daemon(DaemonContext):
         for instance in self.instances:  # start each instance in a new thread
             instance.start()
 
-        logging.info('run done')
+        logging.info('sldap3 daemon instantiation complete')
 
     def terminate(self, signal_number, stack_frame):
-        logging.info('terminating')
+        logging.info('terminating sldap3 daemon')
         for instance in self.instances:  # wait for all instances to end
-            logging.debug('instance stopping')
             instance.stop()
-            logging.debug('instance stopped')
-        logging.info('terminated')
+        logging.info('daemon sldap3 terminated')
 
 if __name__ == '__main__':
     pid = '/tmp/sldap3.pid'
     pidfile = PidFile(pid)
     daemon = Sldap3Daemon(pidfile=pidfile)
     daemon.files_preserve = [logging.getLogger().handlers[0].stream]  # preserve log file
-    logging.info('demonizing')
+    logging.debug('preserving files %s' % str(daemon.files_preserve))
+
+    logging.info('daemonizing sldap3')
     daemon.open()
-    logging.info('demonized')
+    logging.info('sldap3 demonized')
     daemon.run()
-    logging.info('done')
+    logging.info('sldap3 daemon started')

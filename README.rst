@@ -76,6 +76,10 @@ For information and suggestions you can contact me at cannatag@gmail.com or you 
 Changelog
 ---------
 
+* 0.0.4a0 2015.04.23
+    - daemonization working properly
+    - Thread and Process executors available
+
 * 0.0.3a6 2015.04.21
     - Added backward compatability via the trollius package
     - Added Linux daemon capability
