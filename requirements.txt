@@ -1,2 +1,4 @@
+trololio==1.0
+trollius==1.0.4
 pyasn1==0.1.7
 ldap3==0.9.8.2

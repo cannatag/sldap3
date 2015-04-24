@@ -22,6 +22,7 @@
 
 from setuptools import setup
 from json import load
+from sys import platform
 
 version_dict = load(open('_version.json', 'r'))
 version = str(version_dict['version'])
@@ -48,7 +49,11 @@ setup(name=package_name,
                 ],
       package_dir={'': package_folder},
       install_requires=['pyasn1 >= 0.1.7',
-                        'ldap3 >= 0.9.8.2'],
+                        'ldap3 >= 0.9.8.2',
+                        'trollius >= 1.0.4',
+                        'trololio >= 1.0',
+                        'pywin32' if platform == 'win32' else 'pep3143daemon >= 0.0.5'],  # pywin32 for Windows service, pep3143daemon for Linux daemon
+
       license=license,
       author=author,
       author_email=email,

@@ -24,13 +24,7 @@
 # If not, see <http://www.gnu.org/licenses/>.
 
 import logging
-from .. import NATIVE_ASYNCIO
-
-if NATIVE_ASYNCIO:
-    import asyncio
-else:
-    import trollius as asyncio
-    from trollius import From, Return
+from trololio import asyncio
 
 @asyncio.coroutine
 def do_unbind_operation(dua, message_id):

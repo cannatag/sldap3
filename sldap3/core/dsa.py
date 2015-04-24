@@ -22,13 +22,8 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with sldap3 in the COPYING and COPYING.LESSER files.
 # If not, see <http://www.gnu.org/licenses/>.
-from .. import NATIVE_ASYNCIO
+from trololio import asyncio, From, Return
 
-if NATIVE_ASYNCIO:
-    import asyncio
-else:
-    import trollius as asyncio
-    from trollius import From, Return
 
 import ssl
 import logging
@@ -126,10 +121,14 @@ class Dsa(object):
 
         if self.secure_port:  # start secure server
             logging.debug('starting secure server for DSA %s' % self.name)
-            ssl_context = ssl.create_default_context(purpose=ssl.Purpose.CLIENT_AUTH)
-            ssl_context.load_cert_chain(self.cert_file, keyfile=self.key_file, password=self.key_file_password)
-            secure_coro = asyncio.start_server(self.client_connected, self.address, self.secure_port, ssl=ssl_context)
-            self.secure_server = self.instance.loop.run_until_complete(secure_coro)
+            if hasattr(ssl, 'create_default_context'):
+                ssl_context = ssl.create_default_context(purpose=ssl.Purpose.CLIENT_AUTH)
+                ssl_context.load_cert_chain(self.cert_file, keyfile=self.key_file, password=self.key_file_password)
+            elif hasattr(asyncio, 'BACKPORT_SSL_CONTEXT') and asyncio.BACKPORT_SSL_CONTEXT:  # trollius backport of SSLContext
+                ssl_context = asyncio.SSLContext()
+                ssl_context.load_cert_chain(self.cert_file, self.key_file)
+            coro = asyncio.start_server(self.client_connected, self.address, self.secure_port, ssl=ssl_context)
+            self.secure_server = self.instance.loop.run_until_complete(coro)
             logging.debug('started secure server for DSA %s: %s' % (self.name, self.server))
 
         logging.info('DSA {} started'.format(self.name))
@@ -150,10 +149,7 @@ class Dsa(object):
             get_more_data = True
             while receiving:
                 if get_more_data:
-                    if NATIVE_ASYNCIO:
-                        data = yield from dua.reader.read(4096)
-                    else:
-                        data = yield From(dua.reader.read(4096))
+                    data = yield From(dua.reader.read(4096))
 
                     unprocessed += data
                 if len(data) > 0:
@@ -188,20 +184,11 @@ class Dsa(object):
         if message_id not in dua.pending:
             dua.pending[message_id] = dict_req
             if dict_req['type'] == 'bindRequest':
-                if NATIVE_ASYNCIO:
-                    response, response_type = yield from do_bind_operation(dua, message_id, dict_req)
-                else:
-                    response, response_type = yield From(do_bind_operation(dua, message_id, dict_req))
+                response, response_type = yield From(do_bind_operation(dua, message_id, dict_req))
             elif dict_req['type'] == 'unbindRequest':
-                if NATIVE_ASYNCIO:
-                    yield from do_unbind_operation(dua, message_id)
-                else:
-                    yield From(do_unbind_operation(dua, message_id))
+                yield From(do_unbind_operation(dua, message_id))
                 dua.writer.close()
-                if NATIVE_ASYNCIO:
-                    return
-                else:
-                    raise Return()
+                raise Return()
             elif dict_req['type'] == 'extendedReq':
                 response, response_type = do_extended_operation(dua, message_id, dict_req)
                 if response['responseName'] == '1.3.6.1.4.1.1466.20037' and response['result'] == RESULT_SUCCESS:  # issue start_tls
@@ -211,25 +198,16 @@ class Dsa(object):
                 response = None
             else:
                 dua.abort(diagnostic_message='unknown operation')
-                if NATIVE_ASYNCIO:
-                    return
-                else:
-                    raise Return()
+                raise Return()
 
             del dua.pending[message_id]
             if not response:  # notice of disconnection sent while doing operation
-                if NATIVE_ASYNCIO:
-                    return
-                else:
-                    raise Return()
+                raise Return()
             controls = None  # TODO
             ldap_message = build_ldap_message(message_id, response_type, response, controls)
         else:  # pending message with same id of previous message
             dua.abort(diagnostic_message='duplicate message ID')
-            if NATIVE_ASYNCIO:
-                return
-            else:
-                raise Return()
+            raise Return()
         dua.send(ldap_message)
 
     def register_client(self, dua):

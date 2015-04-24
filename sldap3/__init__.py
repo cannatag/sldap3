@@ -1,15 +1,3 @@
-NATIVE_ASYNCIO = False
-
-try:
-    # Use builtin asyncio
-    from asyncio import BaseEventLoop
-    NATIVE_ASYNCIO = True
-except ImportError:
-    # Use Trollius for backward compatability
-    import trollius
-    from trollius import From, Return
-
-
 EXEC_PROCESS = 'PROCESS'
 EXEC_THREAD = 'THREAD'
 
@@ -17,5 +5,5 @@ from .version import __author__, __version__, __email__, __description__, __stat
 
 from .core.dsa import Dsa
 from .core.instance import Instance
-from .backend.user.json import JsonUserBackend
+from .backend.user.json_store import JsonUserBackend
 

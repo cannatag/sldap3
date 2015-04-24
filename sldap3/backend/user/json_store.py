@@ -37,7 +37,7 @@ class JsonUserBackend(UserBaseBackend):
         except Exception:
             self.users = {}
 
-        super().__init__()
+        UserBaseBackend.__init__(self)
 
     def find_user(self, identity):
         if identity in self.users:

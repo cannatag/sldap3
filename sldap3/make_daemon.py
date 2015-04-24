@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 """
 """
 
@@ -58,14 +60,10 @@ except ImportError:
     sys.exit(3)
 
 try:
-    from asyncio import BaseEventLoop
+    from trololio import ASYNCIO, TROLLIUS
 except ImportError:
-    try:
-        import trollius as asyncio
-        from trollius import From, Return
-    except:
-        logging.error('trollius package missing')
-        sys.exit(4)
+    logging.error('trollius or trololio package missing')
+    sys.exit(4)
 
 try:
     import sldap3
@@ -76,6 +74,11 @@ except ImportError:
 
 class Sldap3Daemon(DaemonContext):
     def run(self):
+        if ASYNCIO:
+            logging.info('using asyncio from standard library')
+        elif TROLLIUS:
+            logging.info('using trollius external package')
+
         logging.info('instantiating sldap3 daemon')
         self.instances = []
         user_backend = sldap3.JsonUserBackend('/root/sldap3/test/localhost-users.json')

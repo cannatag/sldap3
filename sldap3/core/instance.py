@@ -28,14 +28,7 @@
 import logging
 from .. import EXEC_PROCESS, EXEC_THREAD
 
-from .. import NATIVE_ASYNCIO
 from time import sleep
-
-if NATIVE_ASYNCIO:
-    import asyncio
-else:
-    import trollius as asyncio
-    from trollius import From, Return
 
 
 class Instance(object):
@@ -65,6 +58,7 @@ class Instance(object):
         if self.started:
             logging.info('stopping instance %s' % self.name)
             self.dsa.stop()
+            sleep(3)
             logging.debug('stopping loop for instance %s' % self.name)
             self.loop.call_soon_threadsafe(self.loop.stop)
             logging.debug('closing loop for instance %s' % self.name)

@@ -25,13 +25,7 @@
 
 import logging
 
-from .. import NATIVE_ASYNCIO
-
-if NATIVE_ASYNCIO:
-    import asyncio
-else:
-    import trollius as asyncio
-    from trollius import From, Return
+from trololio import asyncio, From, Return
 
 
 # ExtendedRequest ::= [APPLICATION 23] SEQUENCE {
@@ -56,7 +50,4 @@ def do_extended_operation(dua, message_id, dict_req):
         result = build_ldap_result(RESULT_PROTOCOL_ERROR, diagnostic_message='extended operation not supported')
         response = build_extended_response(result)
 
-    if NATIVE_ASYNCIO:
-        return response, 'extendedResp'
-    else:
-        raise Response((response, 'extendedRespo'))
+    raise Response((response, 'extendedRespo'))
