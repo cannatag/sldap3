@@ -92,15 +92,21 @@ class Dsa(object):
         if self.port:
             logging.debug('closing unsecure server for DSA %s' % self.name)
             while not self.server:  # wait for server object to appear
-                logging.debug('waiting for DSA %s server to appear' % self.name)
+                logging.debug('waiting for DSA %s server to start' % self.name)
                 sleep(0.2)
             self.instance.loop.call_soon_threadsafe(self.server.close)
+            while self.server.sockets is not None:
+                logging.debug('waiting for DSA %s server to close' % self.name)
+                sleep(0.2)
         if self.secure_port:
             logging.debug('closing secure server for DSA %s' % self.name)
             while not self.secure_server:  # wait for secure server object to appear
-                logging.debug('waiting for DSA %s secure server to appear' % self.name)
+                logging.debug('waiting for DSA %s secure server to start' % self.name)
                 sleep(0.2)
             self.instance.loop.call_soon_threadsafe(self.secure_server.close)
+            while self.secure_server.sockets is not None:
+                logging.debug('waiting for DSA %s secure server to close' % self.name)
+                sleep(0.2)
 
     def client_connected(self, reader, writer):
         logging.debug('client connected from')

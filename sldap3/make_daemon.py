@@ -28,12 +28,12 @@
 import logging
 import sys
 from sldap3 import EXEC_THREAD
+from sldap3.utils.config import config
+from sldap3.utils.log import conf_logger
 
-logging.basicConfig(
-    filename='/var/log/sldap3.log',
-    level=logging.DEBUG,
-    format='%(asctime)s - %(name)s - %(levelname)-7.7s - %(message)s'
-)
+logger = conf_logger('sldap3.conf')
+_conf_conf_name = config.get('conf', 'filename') if config.has_option('conf', 'filename') else '/var/log/sldap3.log'
+
 
 try:
     import resource

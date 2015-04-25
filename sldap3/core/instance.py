@@ -58,7 +58,6 @@ class Instance(object):
         if self.started:
             logging.info('stopping instance %s' % self.name)
             self.dsa.stop()
-            sleep(3)
             logging.debug('stopping loop for instance %s' % self.name)
             self.loop.call_soon_threadsafe(self.loop.stop)
             logging.debug('closing loop for instance %s' % self.name)
