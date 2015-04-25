@@ -23,16 +23,12 @@
 # along with sldap3 in the COPYING and COPYING.LESSER files.
 # If not, see <http://www.gnu.org/licenses/>.
 
-import logging
 from time import sleep
 import sys
 from sldap3 import EXEC_THREAD, EXEC_PROCESS
+from sldap3.utils.log import conf_logger
 
-logging.basicConfig(
-    filename='c:\\Temp\\sldap3.log',
-    level=logging.DEBUG,
-    format='[sldap3-service] %(levelname)-7.7s %(message)s'
-)
+logger = conf_logger('sldap3.daemonize')
 
 try:
     import win32serviceutil
@@ -40,7 +36,7 @@ try:
     import win32event
     import servicemanager
 except ImportError:
-    logging.error('pywin32 package missing')
+    logger.error('pywin32 package missing')
     sys.exit(1)
 
 sys.stderr = open('C:\\Temp\\pyasn1.log', 'a')  # patch for pyasn1 without access to stderr
@@ -48,13 +44,13 @@ sys.stderr = open('C:\\Temp\\pyasn1.log', 'a')  # patch for pyasn1 without acces
 try:
     import pyasn1
 except ImportError:
-    logging.error('pyasn1 package missing')
+    logger.error('pyasn1 package missing')
     sys.exit(2)
 
 try:
     import ldap3
 except ImportError:
-    logging.error('ldap3 package missing')
+    logger.error('ldap3 package missing')
     sys.exit(3)
 
 try:
@@ -64,13 +60,13 @@ except ImportError:
         import trollius as asyncio
         from trollius import From, Return
     except:
-        logging.error('trollius package missing')
+        logger.error('trollius package missing')
         sys.exit(4)
 
 try:
     import sldap3
 except ImportError:
-    logging.error('sldap3 package missing')
+    logger.error('sldap3 package missing')
     sys.exit(5)
 
 
@@ -88,23 +84,22 @@ class Sldap3Service (win32serviceutil.ServiceFramework):
     def SvcStop(self):
         self.ReportServiceStatus(win32service.SERVICE_STOP_PENDING)
         win32event.SetEvent(self.stop_event)
-        logging.info('stopping sldap3 service...')
+        logger.info('stopping sldap3 service...')
         self.stop_requested = True
 
     def SvcDoRun(self):
-        logging.info('running sldap3 service...')
+        logger.info('running sldap3 service...')
         servicemanager.LogMsg(
             servicemanager.EVENTLOG_INFORMATION_TYPE,
             servicemanager.PYS_SERVICE_STARTED,
             (self._svc_name_, '')
         )
         self.run()
-        logging.info('ending sldap3 service...')
+        logger.info('ending sldap3 service...')
 
     def run(self):
-        logging.info('executing sldap3 service...')
+        logger.info('executing sldap3 service...')
 
-        logging.info('instantiating sldap3 daemon')
         self.instances = []
         user_backend = sldap3.JsonUserBackend('/root/sldap3/test/localhost-users.json')
         user_backend.add_user('giovanni', 'admin', 'password')
@@ -133,7 +128,7 @@ class Sldap3Service (win32serviceutil.ServiceFramework):
         for instance in self.instances:  # start each instance in a new thread
             instance.start()
 
-        logging.info('sldap3 daemon instantiation complete')
+        logger.info('sldap3 daemon instantiation complete')
 
         while not self.stop_requested:  # wait for stop signal
             sleep(3)
@@ -141,7 +136,7 @@ class Sldap3Service (win32serviceutil.ServiceFramework):
         for instance in self.instances:  # wait for all instances to end
             instance.stop()
 
-        logging.info('sldap3 service stopped')
+        logger.info('sldap3 service stopped')
 
 if __name__ == '__main__':
     win32serviceutil.HandleCommandLine(Sldap3Service)

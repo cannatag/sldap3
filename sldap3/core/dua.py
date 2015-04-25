@@ -23,12 +23,14 @@
 # along with sldap3 in the COPYING and COPYING.LESSER files.
 # If not, see <http://www.gnu.org/licenses/>.
 
-import ssl
-import logging
+from ..utils.log import conf_logger
+logger = conf_logger('sldap3.dua')
 
+import ssl
 from datetime import datetime
-from ldap3 import RESULT_PROTOCOL_ERROR
 from pyasn1.codec.ber import decoder, encoder
+from ldap3 import RESULT_PROTOCOL_ERROR
+
 from ..protocol.rfc4511 import build_extended_response, build_ldap_result, build_ldap_message
 
 
@@ -59,7 +61,7 @@ class Dua(object):
 
     def start_tls(self):
         if not self.tls_started:
-            logging.debug('start_tls')
+            logger.debug('start_tls')
             ssl_context = ssl.create_default_context(purpose=ssl.Purpose.CLIENT_AUTH)
             ssl_context.load_cert_chain(self.dsa.cert_file, keyfile=self.dsa.key_file, password=self.dsa.key_file_password)
             wrapped_socket = ssl_context.wrap_socket(self.writer.get_extra_info('socket'), server_side=True, do_handshake_on_connect=False)

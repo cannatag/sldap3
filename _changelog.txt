@@ -1,5 +1,6 @@
 * 0.0.4a1 2015.04.24
     - added trololio package for compatability with asyncio and trollius
+    - added logging infrastructure
 
 * 0.0.4a0 2015.04.23
     - daemonization working properly

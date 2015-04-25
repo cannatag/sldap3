@@ -22,7 +22,6 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with sldap3 in the COPYING and COPYING.LESSER files.
 # If not, see <http://www.gnu.org/licenses/>.
-
 try:
     from configparser import ConfigParser
 except ImportError:
@@ -31,6 +30,7 @@ except ImportError:
 from os.path import abspath, join, sep
 from os import getcwd
 from sys import platform
+
 
 config_file_name = 'sldap3.conf'
 config_file_path = sep + 'etc'
@@ -43,16 +43,25 @@ if not config_file:
     config.add_section('user_backend')
     config.set('user_backend', 'json', '/root/sldap3/test/localhost-users.json')
     config.add_section('logging')
-    config.set('logging', 'file_name', 'C:\\Temp\\sldap3.log' if platform == 'win32' else '/var/log/sldap3')
+    config.set('logging', 'file_name', 'C:\\Temp\\sldap3.log' if platform == 'win32' else '/var/log/sldap3.log')
     config.set('logging', 'formatter', '%%(asctime)s - %%(process)d - %%(threadName)s - %%(levelname)s - %%(name)s - %%(message)s')
+    config.set('logging', 'sldap3.config', 'debug')
+    config.set('logging', 'sldap3.logging', 'debug')
+    config.set('logging', 'sldap3.daemonize', 'debug')
+    config.set('logging', 'sldap3.dsa', 'debug')
+    config.set('logging', 'sldap3.dua', 'debug')
+    config.set('logging', 'sldap3.instance', 'debug')
+    config.set('logging', 'sldap3.operation.bind', 'debug')
+    config.set('logging', 'sldap3.operation.unbind', 'debug')
+    config.set('logging', 'sldap3.operation.extended', 'debug')
 
     with open(config_file_name, 'wb') as config_file:
         config.write(config_file)
 
-from .log import conf_logger
-logger = conf_logger('sldap3.config')
-logger.info('working directory: %s', getcwd())
-if nuovo_config:
-    logger.info('new configuration file: %s' % abspath(config_file.name))
-else:
-    logger.info('current configuration file: %s' % [abspath(filename) for filename in config_file])
+# from .log import conf_logger
+# logger = conf_logger('sldap3.config')
+# logger.info('working directory: %s', getcwd())
+# if nuovo_config:
+#     logger.info('new configuration file: %s' % abspath(config_file.name))
+# else:
+#     logger.info('current configuration file: %s' % [abspath(filename) for filename in config_file])

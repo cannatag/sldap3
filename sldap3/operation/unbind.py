@@ -22,11 +22,12 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with sldap3 in the COPYING and COPYING.LESSER files.
 # If not, see <http://www.gnu.org/licenses/>.
+from ..utils.log import conf_logger
+logger = conf_logger('sldap3.operation.unbind')
 
-import logging
 from trololio import asyncio
 
 @asyncio.coroutine
 def do_unbind_operation(dua, message_id):
-    logging.debug('do UNBIND operation for DUA %s', dua.identity)
+    logger.debug('do UNBIND operation for DUA %s', dua.identity)
     dua.user = None

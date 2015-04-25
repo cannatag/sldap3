@@ -25,61 +25,58 @@
 # along with sldap3 in the COPYING and COPYING.LESSER files.
 # If not, see <http://www.gnu.org/licenses/>.
 
-import logging
 import sys
 from sldap3 import EXEC_THREAD
 from sldap3.utils.config import config
 from sldap3.utils.log import conf_logger
 
-logger = conf_logger('sldap3.conf')
-_conf_conf_name = config.get('conf', 'filename') if config.has_option('conf', 'filename') else '/var/log/sldap3.log'
-
+logger = conf_logger('sldap3.daemonize')
 
 try:
     import resource
 except ImportError:
-    logging.error('deamons are available on Linux platform only')
+    logger.error('deamons are available on Linux platform only')
     sys.exit(5)
 
 try:
     from pep3143daemon import DaemonContext, PidFile
 except ImportError:
-    logging.error('pep3143daemon package missing')
+    logger.error('pep3143daemon package missing')
     sys.exit(6)
 
 try:
     import pyasn1
 except ImportError:
-    logging.error('pyasn1 package missing')
+    logger.error('pyasn1 package missing')
     sys.exit(2)
 
 try:
     import ldap3
 except ImportError:
-    logging.error('ldap3 package missing')
+    logger.error('ldap3 package missing')
     sys.exit(3)
 
 try:
     from trololio import ASYNCIO, TROLLIUS
 except ImportError:
-    logging.error('trollius or trololio package missing')
+    logger.error('trollius or trololio package missing')
     sys.exit(4)
 
 try:
     import sldap3
 except ImportError:
-    logging.error('sldap3 package missing')
+    logger.error('sldap3 package missing')
     sys.exit(5)
 
 
 class Sldap3Daemon(DaemonContext):
     def run(self):
         if ASYNCIO:
-            logging.info('using asyncio from standard library')
+            logger.info('using asyncio from standard library')
         elif TROLLIUS:
-            logging.info('using trollius external package')
+            logger.info('using trollius external package')
 
-        logging.info('instantiating sldap3 daemon')
+        logger.info('instantiating sldap3 daemon')
         self.instances = []
         user_backend = sldap3.JsonUserBackend('/root/sldap3/test/localhost-users.json')
         user_backend.add_user('giovanni', 'admin', 'password')
@@ -108,23 +105,22 @@ class Sldap3Daemon(DaemonContext):
         for instance in self.instances:  # start each instance in a new thread
             instance.start()
 
-        logging.info('sldap3 daemon instantiation complete')
+        logger.info('sldap3 daemon instantiation complete')
 
     def terminate(self, signal_number, stack_frame):
-        logging.info('terminating sldap3 daemon')
+        logger.info('terminating sldap3 daemon')
         for instance in self.instances:  # wait for all instances to end
             instance.stop()
-        logging.info('daemon sldap3 terminated')
+        logger.info('daemon sldap3 terminated')
 
 if __name__ == '__main__':
     pid = '/tmp/sldap3.pid'
     pidfile = PidFile(pid)
     daemon = Sldap3Daemon(pidfile=pidfile)
-    daemon.files_preserve = [logging.getLogger().handlers[0].stream]  # preserve log file
-    logging.debug('preserving files %s' % str(daemon.files_preserve))
-
-    logging.info('daemonizing sldap3')
+    daemon.files_preserve = [handler.stream for handler in logger.handlers]  # preserve log file
+    logger.debug('preserving files %s' % str(daemon.files_preserve))
+    logger.info('daemonizing sldap3')
     daemon.open()
-    logging.info('sldap3 demonized')
+    logger.info('sldap3 demonized')
     daemon.run()
-    logging.info('sldap3 daemon started')
+    logger.info('sldap3 daemon started')

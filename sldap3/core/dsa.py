@@ -22,14 +22,15 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with sldap3 in the COPYING and COPYING.LESSER files.
 # If not, see <http://www.gnu.org/licenses/>.
-from trololio import asyncio, From, Return
 
+from ..utils.log import conf_logger
+logger = conf_logger('sldap3.dsa')
 
 import ssl
-import logging
+from trololio import asyncio, From, Return
 from time import sleep
+from pyasn1.codec.ber import decoder
 
-from pyasn1.codec.ber import decoder, encoder
 from ldap3 import RESULT_SUCCESS
 from ldap3.core.exceptions import LDAPExceptionError
 from ldap3.strategy.base import BaseStrategy
@@ -88,28 +89,28 @@ class Dsa(object):
     #     print('DSA {} closed'.format(self.name))
 
     def stop(self):
-        logging.info('stopping DSA %s' % self.name)
+        logger.info('stopping DSA %s' % self.name)
         if self.port:
-            logging.debug('closing unsecure server for DSA %s' % self.name)
+            logger.debug('closing unsecure server for DSA %s' % self.name)
             while not self.server:  # wait for server object to appear
-                logging.debug('waiting for DSA %s server to start' % self.name)
+                logger.debug('waiting for DSA %s server to start' % self.name)
                 sleep(0.2)
             self.instance.loop.call_soon_threadsafe(self.server.close)
             while self.server.sockets is not None:
-                logging.debug('waiting for DSA %s server to close' % self.name)
+                logger.debug('waiting for DSA %s server to close' % self.name)
                 sleep(0.2)
         if self.secure_port:
-            logging.debug('closing secure server for DSA %s' % self.name)
+            logger.debug('closing secure server for DSA %s' % self.name)
             while not self.secure_server:  # wait for secure server object to appear
-                logging.debug('waiting for DSA %s secure server to start' % self.name)
+                logger.debug('waiting for DSA %s secure server to start' % self.name)
                 sleep(0.2)
             self.instance.loop.call_soon_threadsafe(self.secure_server.close)
             while self.secure_server.sockets is not None:
-                logging.debug('waiting for DSA %s secure server to close' % self.name)
+                logger.debug('waiting for DSA %s secure server to close' % self.name)
                 sleep(0.2)
 
     def client_connected(self, reader, writer):
-        logging.debug('client connected from')
+        logger.debug('client connected from')
         dua = Dua(self.user_backend.anonymous(), reader, writer, self)
         self.register_client(dua)
 
@@ -117,16 +118,16 @@ class Dsa(object):
         self.instance.loop = asyncio.new_event_loop()
         self.instance.loop.set_debug(True)
         asyncio.set_event_loop(self.instance.loop)
-        logging.info('starting DSA %s' % self.name)
+        logger.info('starting DSA %s' % self.name)
 
         if self.port:  # start unsecure server
-            logging.debug('starting unsecure server for DSA %s' % self.name)
+            logger.debug('starting unsecure server for DSA %s' % self.name)
             coro = asyncio.start_server(self.client_connected, self.address, self.port)
             self.server = self.instance.loop.run_until_complete(coro)
-            logging.debug('started unsecure server for DSA %s: %s' % (self.name, self.server))
+            logger.debug('started unsecure server for DSA %s: %s' % (self.name, self.server))
 
         if self.secure_port:  # start secure server
-            logging.debug('starting secure server for DSA %s' % self.name)
+            logger.debug('starting secure server for DSA %s' % self.name)
             if hasattr(ssl, 'create_default_context'):
                 ssl_context = ssl.create_default_context(purpose=ssl.Purpose.CLIENT_AUTH)
                 ssl_context.load_cert_chain(self.cert_file, keyfile=self.key_file, password=self.key_file_password)
@@ -135,9 +136,9 @@ class Dsa(object):
                 ssl_context.load_cert_chain(self.cert_file, self.key_file)
             coro = asyncio.start_server(self.client_connected, self.address, self.secure_port, ssl=ssl_context)
             self.secure_server = self.instance.loop.run_until_complete(coro)
-            logging.debug('started secure server for DSA %s: %s' % (self.name, self.server))
+            logger.debug('started secure server for DSA %s: %s' % (self.name, self.server))
 
-        logging.info('DSA {} started'.format(self.name))
+        logger.info('DSA {} started'.format(self.name))
 
         if self.port:
             self.instance.loop.run_until_complete(self.server.wait_closed())
@@ -173,15 +174,15 @@ class Dsa(object):
                             receiving = False
                 else:
                     receiving = False
-            logging.debug('received {} bytes for server {}'.format(len(data), self.name))
+            logger.debug('received {} bytes for server {}'.format(len(data), self.name))
             if messages:
                 for request in messages:
                     while len(request) > 0:
                         ldap_req, unprocessed = decoder.decode(request, asn1Spec=LDAPMessage())
                         request = unprocessed
                         self.instance.loop.create_task(self.perform_request(dua, ldap_req))
-                    logging.debug('processed request for server %s' % self.name)
-        logging.info('exit handle for server %s' % self.name)
+                    logger.debug('processed request for server %s' % self.name)
+        logger.info('exit handle for server %s' % self.name)
 
     @asyncio.coroutine
     def perform_request(self, dua, request):
@@ -218,11 +219,11 @@ class Dsa(object):
 
     def register_client(self, dua):
         task = self.instance.loop.create_task(self.handle_client(dua))
-        logging.debug('new connection on DSA %s' % self.name)
+        logger.debug('new connection on DSA %s' % self.name)
         self.clients[task] = dua
 
         def client_done(task_done):
-            logging.debug('closing connection on server %s for identity %s' % (self.name, dua.user.identity))
+            logger.debug('closing connection on server %s for identity %s' % (self.name, dua.user.identity))
             self.unregister_client(task_done)
             dua.writer.close()
 

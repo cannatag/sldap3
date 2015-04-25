@@ -25,10 +25,12 @@
 
 # from threading import Thread
 # from multiprocessing import Process
-import logging
-from .. import EXEC_PROCESS, EXEC_THREAD
+from ..utils.log import conf_logger
+logger = conf_logger('sldap3.instance')
 
 from time import sleep
+
+from .. import EXEC_PROCESS, EXEC_THREAD
 
 
 class Instance(object):
@@ -50,24 +52,24 @@ class Instance(object):
 
     def start(self):
         if not self.started:
-            logging.info('starting instance %s' % self.name)
+            logger.info('starting instance %s' % self.name)
             self.executor.start()
             self.started = True
 
     def stop(self):
         if self.started:
-            logging.info('stopping instance %s' % self.name)
+            logger.info('stopping instance %s' % self.name)
             self.dsa.stop()
-            logging.debug('stopping loop for instance %s' % self.name)
+            logger.debug('stopping loop for instance %s' % self.name)
             self.loop.call_soon_threadsafe(self.loop.stop)
-            logging.debug('closing loop for instance %s' % self.name)
+            logger.debug('closing loop for instance %s' % self.name)
             while self.loop.is_running():
-                logging.debug('waiting for Instance %s loop to stop' % self.name)
+                logger.debug('waiting for Instance %s loop to stop' % self.name)
                 sleep(0.2)
             self.loop.call_soon_threadsafe(self.loop.close)
-            logging.info('Instance %s loop halted and closed' % self.name)
-            logging.debug('waiting for instance %s executor to join' % self.name)
+            logger.info('Instance %s loop halted and closed' % self.name)
+            logger.debug('waiting for instance %s executor to join' % self.name)
             self.executor.join()
-            logging.debug('instance %s joined' % self.name)
+            logger.debug('instance %s joined' % self.name)
             self.started = False
-            logging.info('stopped instance %s' % self.name)
+            logger.info('stopped instance %s' % self.name)

@@ -23,7 +23,8 @@
 # along with sldap3 in the COPYING and COPYING.LESSER files.
 # If not, see <http://www.gnu.org/licenses/>.
 
-import logging
+from ..utils.log import conf_logger
+logger = conf_logger('sldap3.operation.bind')
 
 from trololio import asyncio, From, Return
 
@@ -49,9 +50,9 @@ from ..protocol.rfc4511 import build_ldap_result, build_bind_response
 
 @asyncio.coroutine
 def do_bind_operation(dua, message_id, dict_req):
-    logging.debug('do BIND operation for DUA %s: %s' % (dua.identity, str(dict_req)))
+    logger.debug('do BIND operation for DUA %s: %s' % (dua.identity, str(dict_req)))
     while len(dua.pending) > 1:  # wait until only the bind operation is in the pending dict
-        asyncio.sleep(0.1)
+        asyncio.sleep(0.2)
 
     server_sasl_credentials = None
     if dict_req['version'] != 3:  # protocol version check (RFC4511 4.2 - line 878)
