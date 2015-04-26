@@ -35,7 +35,7 @@ logger = conf_logger('sldap3.daemonize')
 try:
     import resource
 except ImportError:
-    logger.error('deamons are available on Linux platform only')
+    logger.error('deamons are available on Linux only')
     sys.exit(5)
 
 try:
@@ -78,7 +78,7 @@ class Sldap3Daemon(DaemonContext):
 
         logger.info('instantiating sldap3 daemon')
         self.instances = []
-        user_backend = sldap3.JsonUserBackend('/root/sldap3/test/localhost-users.json')
+        user_backend = sldap3.JsonUserBackend('/tmp/sldap3-users.json')
         user_backend.add_user('giovanni', 'admin', 'password')
         user_backend.add_user('beatrice', 'user', 'password')
         user_backend.store()

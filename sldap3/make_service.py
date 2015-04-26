@@ -39,8 +39,6 @@ except ImportError:
     logger.error('pywin32 package missing')
     sys.exit(1)
 
-sys.stderr = open('C:\\Temp\\pyasn1.log', 'a')  # patch for pyasn1 without access to stderr
-
 try:
     import pyasn1
 except ImportError:
@@ -101,7 +99,7 @@ class Sldap3Service (win32serviceutil.ServiceFramework):
         logger.info('executing sldap3 service...')
 
         self.instances = []
-        user_backend = sldap3.JsonUserBackend('/root/sldap3/test/localhost-users.json')
+        user_backend = sldap3.JsonUserBackend('C:\\Temp\\sldap3-users.json')
         user_backend.add_user('giovanni', 'admin', 'password')
         user_backend.add_user('beatrice', 'user', 'password')
         user_backend.store()

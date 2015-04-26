@@ -1,1 +1,0 @@
-{"users": {"giovanni": {"password": "password", "auth": "admin"}, "beatrice": {"password": "password", "auth": "user"}, "users": {"giovanni": {"auth": "admin", "password": "password"}, "beatrice": {"auth": "user", "password": "password"}}}}

@@ -22,8 +22,10 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with sldap3 in the COPYING and COPYING.LESSER files.
 # If not, see <http://www.gnu.org/licenses/>.
+
 from logging import FileHandler, getLogger, DEBUG, INFO, WARN, ERROR, CRITICAL, Formatter
 from .config import config
+
 _conf_logging_file_name = config.get('logging', 'file_name') if config.has_option('logging', 'file_name') else None
 _conf_logging_formatter = config.get('logging', 'formatter') if config.has_option('logging', 'formatter') else '%(asctime)s - %(levelname)s - %(name)s - %(message)s'
 
@@ -69,7 +71,7 @@ def conf_logger(logger_name):
 
     return new_logger
 
-logger = conf_logger('sldap3.log')
-logger.info('logging.file_name: %s' % _conf_logging_file_name)
-logger.debug('logging.formatter: %s' % _conf_logging_formatter)
-logger.debug('emulate NullHandler: %s', emulate_null_handler)
+logger = conf_logger('sldap3.logging')
+logger.info('file_name: %s' % _conf_logging_file_name)
+logger.debug('formatter: %s' % _conf_logging_formatter)
+logger.debug('emulated NullHandler: %s', emulate_null_handler)
