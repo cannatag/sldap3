@@ -55,7 +55,7 @@ if not config_file:
     config.add_section('user_backend')
     config.set('user_backend', 'json', join(temp_path, 'sldap3-users.json'))
     config.add_section('logging')
-    config.set('logging', 'file_name', join(log_path, 'sldap3.log'))
+    config.set('logging', 'filename', join(log_path, 'sldap3.log'))
     config.set('logging', 'formatter', '%%(asctime)s - %%(process)d - %%(threadName)s - %%(levelname)s - %%(name)s - %%(message)s')
     config.set('logging', 'sldap3.config', 'debug')
     config.set('logging', 'sldap3.logging', 'debug')

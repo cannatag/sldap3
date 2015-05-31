@@ -57,7 +57,7 @@ except ImportError:
     try:
         import trollius as asyncio
         from trollius import From, Return
-    except:
+    except  ImportError:
         logger.error('trollius package missing')
         sys.exit(4)
 

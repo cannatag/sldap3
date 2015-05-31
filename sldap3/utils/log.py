@@ -26,7 +26,7 @@
 from logging import FileHandler, getLogger, DEBUG, INFO, WARN, ERROR, CRITICAL, Formatter
 from .config import config
 
-_conf_logging_file_name = config.get('logging', 'file_name') if config.has_option('logging', 'file_name') else None
+_conf_logging_filename = config.get('logging', 'filename') if config.has_option('logging', 'filename') else None
 _conf_logging_formatter = config.get('logging', 'formatter') if config.has_option('logging', 'formatter') else '%(asctime)s - %(levelname)s - %(name)s - %(message)s'
 
 emulate_null_handler = False
@@ -38,11 +38,17 @@ except ImportError:  # NullHandler not present in Python < 2.7
     from logging import Handler
 
     class NullHandler(Handler):
-        def emit(self, record):
-            pass
+        def handle(self, record):
+            """Stub."""
 
-if _conf_logging_file_name:
-    handler = FileHandler(_conf_logging_file_name, mode='a', encoding='utf-8')
+        def emit(self, record):
+            """Stub."""
+
+        def createLock(self):
+            self.lock = None
+
+if _conf_logging_filename:
+    handler = FileHandler(_conf_logging_filename, mode='w+', encoding='utf-8')
 else:
     handler = NullHandler()
 
@@ -72,6 +78,6 @@ def conf_logger(logger_name):
     return new_logger
 
 logger = conf_logger('sldap3.logging')
-logger.info('file_name: %s' % _conf_logging_file_name)
+logger.info('filename: %s' % _conf_logging_filename)
 logger.debug('formatter: %s' % _conf_logging_formatter)
 logger.debug('emulated NullHandler: %s', emulate_null_handler)

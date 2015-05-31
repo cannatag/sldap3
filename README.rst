@@ -1,19 +1,22 @@
 SLDAP3
 ======
 
-.. image:: https://pypip.in/version/sldap3/badge.svg
+.. image:: https://img.shields.io/pypi/v/sldap3.svg
     :target: https://pypi.python.org/pypi/sldap3/
     :alt: Latest Version
 
-.. image:: https://travis-ci.org/cannatag/sldap3.svg?branch=master
+.. image:: https://img.shields.io/travis/cannatag/sldap3/master.svg
     :target: https://travis-ci.org/cannatag/sldap3
     :alt: TRAVIS-CI build status for master branch
 
-.. image:: https://pypip.in/license/sldap3/badge.svg
+.. image:: https://img.shields.io/pypi/l/sldap3.svg
     :target: https://pypi.python.org/pypi/sldap3/
     :alt: License
 
+THIS IS A PRE-ALPHA RELEASE. PLEASE DO NOT USE!!!
+
 sldap3 is a strictly RFC 4511 conforming LDAP V3 pure Python **server**. It's a sibling of the **ldap3** client LDAP library.
+
 
 Home Page
 ---------
