@@ -48,11 +48,11 @@ setup(name=package_name,
                 'sldap3.utils',
                 ],
       package_dir={'': package_folder},
-      install_requires=['pyasn1 >= 0.1.7',
-                        'ldap3 >= 0.9.8.2',
-                        'trollius >= 1.0.4',
+      install_requires=['pyasn1 >= 0.1.9',
+                        'ldap3 >= 1.3.1',
+                        'trollius >= 2.1',
                         'trololio >= 1.0',
-                        'pywin32' if platform == 'win32' else 'pep3143daemon >= 0.0.5'],  # pywin32 for Windows service, pep3143daemon for Linux daemon
+                        'pywin32' if platform == 'win32' else 'pep3143daemon >= 0.0.6'],  # pywin32 for Windows service, pep3143daemon for Linux daemon
 
       license=license,
       author=author,

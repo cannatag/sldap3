@@ -1,3 +1,6 @@
+* 0.0.5 2016.06.11
+    - added daemon/service config file
+
 * 0.0.4a2 2015.05.31
     - moved badges to shields.io
 

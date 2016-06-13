@@ -15,7 +15,7 @@ SLDAP3
 
 THIS IS A PRE-ALPHA RELEASE. PLEASE DO NOT USE!!!
 
-sldap3 is a strictly RFC 4511 conforming LDAP V3 pure Python **server**. It's a sibling of the **ldap3** client LDAP library.
+sldap3 is a strictly RFC 4510 conforming LDAP V3 pure Python **server**. It's a sibling of the **ldap3** client LDAP library.
 
 
 Home Page

@@ -29,6 +29,8 @@ import sys
 from sldap3 import EXEC_THREAD
 from sldap3.utils.config import config
 from sldap3.utils.log import conf_logger
+from tempfile import gettempdir
+from os.path import join
 
 logger = conf_logger('sldap3.daemonize')
 
@@ -57,6 +59,8 @@ except ImportError:
     sys.exit(3)
 
 try:
+    import trollius as asyncio
+    from trollius import From, Return
     from trololio import ASYNCIO, TROLLIUS
 except ImportError:
     logger.error('trollius or trololio package missing')
@@ -71,14 +75,13 @@ except ImportError:
 
 class Sldap3Daemon(DaemonContext):
     def run(self):
+        logger.info('running sldap3 daemon')
         if ASYNCIO:
             logger.info('using asyncio from standard library')
         elif TROLLIUS:
             logger.info('using trollius external package')
-
-        logger.info('instantiating sldap3 daemon')
         self.instances = []
-        user_backend = sldap3.JsonUserBackend('/tmp/sldap3-users.json')
+        user_backend = sldap3.JsonUserBackend(join(gettempdir(), 'sldap3-users.json'))
         user_backend.add_user('giovanni', 'admin', 'password')
         user_backend.add_user('beatrice', 'user', 'password')
         user_backend.store()

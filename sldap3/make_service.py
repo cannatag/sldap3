@@ -27,6 +27,8 @@ from time import sleep
 import sys
 from sldap3 import EXEC_THREAD, EXEC_PROCESS
 from sldap3.utils.log import conf_logger
+from tempfile import gettempdir
+from os.path import join
 
 logger = conf_logger('sldap3.daemonize')
 
@@ -57,8 +59,9 @@ except ImportError:
     try:
         import trollius as asyncio
         from trollius import From, Return
+        from trololio import ASYNCIO, TROLLIUS
     except  ImportError:
-        logger.error('trollius package missing')
+        logger.error('trollius or trololio package missing')
         sys.exit(4)
 
 try:
@@ -71,7 +74,7 @@ except ImportError:
 class Sldap3Service (win32serviceutil.ServiceFramework):
     _svc_name_ = 'sldap3'
     _svc_display_name_ = 'sldap3 - LDAP Server'
-    _svc_description_ = 'A strictly RFC 4511 conforming LDAP V3 pure Python server'
+    _svc_description_ = 'A strictly RFC 4510 conforming LDAP V3 pure Python server'
 
     def __init__(self, args):
         win32serviceutil.ServiceFramework.__init__(self, args)
@@ -86,7 +89,7 @@ class Sldap3Service (win32serviceutil.ServiceFramework):
         self.stop_requested = True
 
     def SvcDoRun(self):
-        logger.info('running sldap3 service...')
+        logger.info('starting sldap3 service...')
         servicemanager.LogMsg(
             servicemanager.EVENTLOG_INFORMATION_TYPE,
             servicemanager.PYS_SERVICE_STARTED,
@@ -96,10 +99,13 @@ class Sldap3Service (win32serviceutil.ServiceFramework):
         logger.info('ending sldap3 service...')
 
     def run(self):
-        logger.info('executing sldap3 service...')
-
+        logger.info('running sldap3 service...')
+        if ASYNCIO:
+            logger.info('using asyncio from standard library')
+        elif TROLLIUS:
+            logger.info('using trollius external package')
         self.instances = []
-        user_backend = sldap3.JsonUserBackend('C:\\Temp\\sldap3-users.json')
+        user_backend = sldap3.JsonUserBackend(join(gettempdir(), 'sldap3-users.json'))
         user_backend.add_user('giovanni', 'admin', 'password')
         user_backend.add_user('beatrice', 'user', 'password')
         user_backend.store()
@@ -126,7 +132,7 @@ class Sldap3Service (win32serviceutil.ServiceFramework):
         for instance in self.instances:  # start each instance in a new thread
             instance.start()
 
-        logger.info('sldap3 daemon instantiation complete')
+        logger.info('sldap3 service instantiation complete')
 
         while not self.stop_requested:  # wait for stop signal
             sleep(3)

@@ -28,32 +28,28 @@ try:
 except ImportError:
     from ConfigParser import SafeConfigParser as ConfigParser  # Python 2.6
 
-try:
-    from win32api import GetTempPath
-except ImportError:
-    def GetTempPath():
-        return join('C:', sep, 'Temp')
-
 from os.path import abspath, join, sep
-from os import getcwd
+from tempfile import gettempdir
 import platform
 
-
 config_file_name = 'sldap3.conf'
+temp_path = gettempdir()
 if platform.system() == 'Windows':
-    temp_path = GetTempPath()
     log_path = temp_path
     config_file_path = temp_path
 else:
-    temp_path = join(sep, 'tmp')
     log_path = join(sep, 'var', 'log')
     config_file_path = join(sep, 'etc')
 
+# check config
 config = ConfigParser()
 config_file = config.read([join(config_file_path, config_file_name), config_file_name])  # search full path or working directory
 if not config_file:
-    config.add_section('user_backend')
-    config.set('user_backend', 'json', join(temp_path, 'sldap3-users.json'))
+    # create default config
+    config.add_section('global')
+    config.set('global', 'instances', 'DSA1', 'DSA2')
+    config.add_section('user_backends')
+    config.set('user_backends', 'json', join(temp_path, 'sldap3-users.json'))
     config.add_section('logging')
     config.set('logging', 'filename', join(log_path, 'sldap3.log'))
     config.set('logging', 'formatter', '%%(asctime)s - %%(process)d - %%(threadName)s - %%(levelname)s - %%(name)s - %%(message)s')
@@ -66,9 +62,34 @@ if not config_file:
     config.set('logging', 'sldap3.operation.bind', 'debug')
     config.set('logging', 'sldap3.operation.unbind', 'debug')
     config.set('logging', 'sldap3.operation.extended', 'debug')
+    config.add_section('DSA1')
+    config.set('DSA1', 'address', '0.0.0.0')
+    config.set('DSA1', 'port', '389')
+    config.set('DSA1', 'secure_port', '636')
+    config.set('DSA1', 'cert_file', 'server-cert.pem')
+    config.set('DSA1', 'key_file', 'server-key.pem')
+    config.set('DSA1', 'key_file_password', 'password')
+    config.set('DSA1', 'user_backend', 'json')
+    config.add_section('DSA2')
+    config.set('DSA1', 'address', '0.0.0.0')
+    config.set('DSA1', 'port', '1389')
+    config.set('DSA1', 'secure_port', '1636')
+    config.set('DSA1', 'cert_file', 'server-cert.pem')
+    config.set('DSA1', 'key_file', 'server-key.pem')
+    config.set('DSA1', 'key_file_password', 'password')
+    config.set('DSA1', 'user_backend', 'json')
 
     with open(join(config_file_path, config_file_name), 'w') as new_config_file:
         config.write(new_config_file)
+
+
+def get_config():
+    config = ConfigParser()
+    config.read([join(config_file_path, config_file_name), config_file_name])  # search full path or working directory
+
+    return {'logging': dict(config['logging']),
+            'instances': {config[dsa] for dsa in config['global']['instances']}}
+
 
 # from .log import conf_logger
 # logger = conf_logger('sldap3.config')
